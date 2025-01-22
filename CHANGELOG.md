@@ -1,3 +1,10 @@
+## [0.23.1](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.0...v0.23.1) (2025-01-22)
+
+
+### Bug Fixes
+
+* excel export: cast unsigned columns to bigint ([e897eb9](https://github.com/luusluus/vscode-parquet-visualizer/commit/e897eb9bf9cfcb8e8937365894e9ed8616d95c01))
+
 # [0.23.0](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.22.0...v0.23.0) (2025-01-19)
 
 
