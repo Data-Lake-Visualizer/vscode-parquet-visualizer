@@ -222,11 +222,16 @@ class QueryHelper {
       `;
       const schema = await this.backend.query(schemaQuery);
 
+      const unsignedIntegers = ['UTINYINT', 'USMALLINT', 'UINTEGER', 'UBIGINT', 'UHUGEINT'];
       // Build the SELECT query
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const columns = schema.map(({ column_name, data_type }) => {
           if (data_type.includes('STRUCT')) {
               return `TO_JSON("${column_name}") AS ${column_name}`;
+          }
+
+          if (unsignedIntegers.includes(data_type)) {
+              return `CAST("${column_name}" AS BIGINT) AS ${column_name}`;
           }
           return `"${column_name}"`;
       });
