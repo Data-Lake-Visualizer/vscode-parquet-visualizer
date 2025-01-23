@@ -1,3 +1,10 @@
+## [0.23.3](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.2...v0.23.3) (2025-01-23)
+
+
+### Bug Fixes
+
+* show correct cell value in popup ([2656edd](https://github.com/luusluus/vscode-parquet-visualizer/commit/2656edd4e3efd0761cd860d6930dcce485eeefc6))
+
 ## [0.23.2](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.1...v0.23.2) (2025-01-23)
 
 
