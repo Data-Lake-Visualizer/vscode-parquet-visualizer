@@ -743,6 +743,7 @@ export class TabularDocumentEditorProvider
         let queryTabQueryData = {
             result: [] as any[],
             headers: [] as any[],
+            schema: [] as any,
             rowCount: 0,
             pageCount: 0,
         }
@@ -756,12 +757,12 @@ export class TabularDocumentEditorProvider
             }
 
             try {
-                const { result, headers, rowCount, pageCount } =
-                    await document.queryTabWorker.query(queryMessage)
-                queryTabQueryData.result = result
-                queryTabQueryData.headers = headers
-                queryTabQueryData.rowCount = rowCount
-                queryTabQueryData.pageCount = pageCount
+                const queryResult = await document.queryTabWorker.query(queryMessage)
+                queryTabQueryData.result = queryResult.result
+                queryTabQueryData.headers = queryResult.headers
+                queryTabQueryData.schema = queryResult.schema
+                queryTabQueryData.rowCount = queryResult.rowCount
+                queryTabQueryData.pageCount = queryResult.pageCount
             } catch (e: unknown) {
                 console.error(e)
                 const error = e as DuckDbError
@@ -787,7 +788,7 @@ export class TabularDocumentEditorProvider
 
         const data = {
             headers: queryTabQueryData.headers,
-            schema: schema,
+            schema: queryTabQueryData.schema,
             metaData: metadata,
             rawData: queryTabQueryData.result,
             rowCount: queryTabQueryData.rowCount,
