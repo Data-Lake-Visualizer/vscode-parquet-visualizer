@@ -1,242 +1,268 @@
-const path = require('path');
-import { Worker } from 'worker_threads';
-import * as comlink from 'comlink';
-import nodeEndpoint from 'comlink/dist/umd/node-adapter';
+const path = require('path')
+import { Worker } from 'worker_threads'
+import * as comlink from 'comlink'
+import nodeEndpoint from 'comlink/dist/umd/node-adapter'
 
-const { exec } = require('child_process');
+const { exec } = require('child_process')
 
-import * as vscode from 'vscode';
-import { DuckDbError } from 'duckdb-async';
+import * as vscode from 'vscode'
+import { DuckDbError } from 'duckdb-async'
 
-import type { BackendWorker } from './worker';
-import { Backend } from './backend';
-import { createHeadersFromData, getNonce, isRunningInWSL } from './util';
-import { Disposable } from "./dispose";
-import { DuckDBBackend } from './duckdb-backend';
-import { ParquetWasmBackend } from './parquet-wasm-backend';
-import { affectsDocument, defaultPageSizes, defaultQuery, defaultBackend, defaultRunQueryKeyBinding, dateTimeFormat, outputDateTimeFormatInUTC, runQueryOnStartup } from './settings';
-import { DateTimeFormatSettings, SerializeableUri } from './types';
+import type { BackendWorker } from './worker'
+import { Backend } from './backend'
+import { createHeadersFromData, getNonce, isRunningInWSL } from './util'
+import { Disposable } from './dispose'
+import { DuckDBBackend } from './duckdb-backend'
+import { ParquetWasmBackend } from './parquet-wasm-backend'
+import {
+    affectsDocument,
+    defaultPageSizes,
+    defaultQuery,
+    defaultBackend,
+    defaultRunQueryKeyBinding,
+    dateTimeFormat,
+    outputDateTimeFormatInUTC,
+    runQueryOnStartup,
+} from './settings'
+import { DateTimeFormatSettings, SerializeableUri } from './types'
 
-import { TelemetryManager } from './telemetry';
+import { TelemetryManager } from './telemetry'
 // import { getLogger } from './logger';
 
-import * as constants from './constants';
+import * as constants from './constants'
 
 class CustomDocument extends Disposable implements vscode.CustomDocument {
-    uri: vscode.Uri;
-    backend: Backend;
-    queryTabWorker: comlink.Remote<BackendWorker>;
-    dataTabWorker: comlink.Remote<BackendWorker>;
-    isQueryAble: boolean = false;
+    uri: vscode.Uri
+    backend: Backend
+    queryTabWorker: comlink.Remote<BackendWorker>
+    dataTabWorker: comlink.Remote<BackendWorker>
+    isQueryAble: boolean = false
 
-    savedExporturi: vscode.Uri;
+    savedExporturi: vscode.Uri
 
     static async create(
-      uri: vscode.Uri
+        uri: vscode.Uri
     ): Promise<CustomDocument | PromiseLike<CustomDocument>> {
         const dateTimeFormatSettings: DateTimeFormatSettings = {
-          format: dateTimeFormat(),
-          useUTC: outputDateTimeFormatInUTC()
-        };
-        const backendName = defaultBackend();
-        try{
+            format: dateTimeFormat(),
+            useUTC: outputDateTimeFormatInUTC(),
+        }
+        const backendName = defaultBackend()
+        try {
             switch (backendName) {
-              case 'duckdb': {
-                const backend = await DuckDBBackend.createAsync(uri, dateTimeFormatSettings);
-                await backend.initialize();
-                const totalItems = backend.getRowCount();
-                
-                const columnCount = backend.arrowSchema.fields.length;
-                TelemetryManager.sendEvent("fileOpened", {
-                  backend: 'duckdb',
-                  numRows: totalItems.toString(),
-                  numColumns: columnCount.toString()
-                });
-                
-                return new CustomDocument(uri, backend);
-              }
-              case 'parquet-wasm': {
-                const backend = await ParquetWasmBackend.createAsync(uri, dateTimeFormatSettings);
+                case 'duckdb': {
+                    const backend = await DuckDBBackend.createAsync(
+                        uri,
+                        dateTimeFormatSettings
+                    )
+                    await backend.initialize()
+                    const totalItems = backend.getRowCount()
 
-                const columnCount = backend.arrowSchema.fields.length;
-                TelemetryManager.sendEvent("fileOpened", {
-                  backend: 'parquet-wasm',
-                  numRows: backend.getRowCount().toString(),
-                  numColumns: columnCount.toString()
-                });
+                    const columnCount = backend.arrowSchema.fields.length
+                    TelemetryManager.sendEvent('fileOpened', {
+                        backend: 'duckdb',
+                        numRows: totalItems.toString(),
+                        numColumns: columnCount.toString(),
+                    })
 
-                return new CustomDocument(uri, backend);
-              }
-              default:
-                const errorMessage = "Unknown backend. Terminating";
-                vscode.window.showErrorMessage(errorMessage);
-                throw Error(errorMessage);
-            }
-
-        } catch (err: unknown){
-            console.error("An error occurred:", err);
-
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            const stackTrace = err instanceof Error ? err.stack : undefined;
-            TelemetryManager.sendEvent("fileParsingResult", {
-              result: "Failure",
-              uri: uri.toJSON(),
-              backend: backendName,
-              error: errorMessage,
-              stacktrace: stackTrace || "No stack trace available"
-            });
-
-            const error = err as DuckDbError;
-            if (error.errorType === "Invalid" && document) {
-              const backend = await ParquetWasmBackend.createAsync(uri, dateTimeFormatSettings);
-              TelemetryManager.sendEvent("fileParsingFallback", {
-                  uri: uri.toJSON(),
-                  backend: 'parquet-wasm',
+                    return new CustomDocument(uri, backend)
                 }
-              );
-              return new CustomDocument(uri, backend);
+                case 'parquet-wasm': {
+                    const backend = await ParquetWasmBackend.createAsync(
+                        uri,
+                        dateTimeFormatSettings
+                    )
+
+                    const columnCount = backend.arrowSchema.fields.length
+                    TelemetryManager.sendEvent('fileOpened', {
+                        backend: 'parquet-wasm',
+                        numRows: backend.getRowCount().toString(),
+                        numColumns: columnCount.toString(),
+                    })
+
+                    return new CustomDocument(uri, backend)
+                }
+                default:
+                    const errorMessage = 'Unknown backend. Terminating'
+                    vscode.window.showErrorMessage(errorMessage)
+                    throw Error(errorMessage)
+            }
+        } catch (err: unknown) {
+            console.error('An error occurred:', err)
+
+            const errorMessage =
+                err instanceof Error ? err.message : 'Unknown error'
+            const stackTrace = err instanceof Error ? err.stack : undefined
+            TelemetryManager.sendEvent('fileParsingResult', {
+                result: 'Failure',
+                uri: uri.toJSON(),
+                backend: backendName,
+                error: errorMessage,
+                stacktrace: stackTrace || 'No stack trace available',
+            })
+
+            const error = err as DuckDbError
+            if (error.errorType === 'Invalid' && document) {
+                const backend = await ParquetWasmBackend.createAsync(
+                    uri,
+                    dateTimeFormatSettings
+                )
+                TelemetryManager.sendEvent('fileParsingFallback', {
+                    uri: uri.toJSON(),
+                    backend: 'parquet-wasm',
+                })
+                return new CustomDocument(uri, backend)
             }
 
-            vscode.window.showErrorMessage(error.message);
-            throw Error(error.message);
+            vscode.window.showErrorMessage(error.message)
+            throw Error(error.message)
         }
     }
 
     openFolder(filePath: string) {
-      try {
-        if (process.platform === 'win32') {
-          exec(`explorer.exe /select, "${filePath}"`);
-        } else if (process.platform === 'darwin') {
-          exec(`open -R "${filePath}"`);
-        } else if (process.platform === 'linux') {
-          if (isRunningInWSL()){
-            exec(`explorer.exe /select, \`wslpath -w "${filePath}"\``);
-          } else {
-            exec(`xdg-open "${filePath}"`);
-          }
-        } else {
-          console.error(`Unsupported platform: ${process.platform} to open folder location ${filePath}`);
+        try {
+            if (process.platform === 'win32') {
+                exec(`explorer.exe /select, "${filePath}"`)
+            } else if (process.platform === 'darwin') {
+                exec(`open -R "${filePath}"`)
+            } else if (process.platform === 'linux') {
+                if (isRunningInWSL()) {
+                    exec(`explorer.exe /select, \`wslpath -w "${filePath}"\``)
+                } else {
+                    exec(`xdg-open "${filePath}"`)
+                }
+            } else {
+                console.error(
+                    `Unsupported platform: ${process.platform} to open folder location ${filePath}`
+                )
+            }
+        } catch (e: unknown) {
+            console.error(e)
         }
-      }
-      catch (e: unknown) {
-        console.error(e);
-      }
     }
 
-    private constructor(
-      uri: vscode.Uri,
-      backend: Backend,
-    ) {
-      super();
-      this.uri = uri;
-      this.backend = backend;
-      
-      // FIXME: Check if backend is of type ParquetWasm
-      if (this.backend instanceof DuckDBBackend) {
-        this.isQueryAble = true;
+    private constructor(uri: vscode.Uri, backend: Backend) {
+        super()
+        this.uri = uri
+        this.backend = backend
 
-        const dateTimeFormatSettings: DateTimeFormatSettings = {
-          format: dateTimeFormat(),
-          useUTC: outputDateTimeFormatInUTC()
-        };
+        // FIXME: Check if backend is of type ParquetWasm
+        if (this.backend instanceof DuckDBBackend) {
+            this.isQueryAble = true
 
-        const workerPath = __dirname + "/worker.js";
+            const dateTimeFormatSettings: DateTimeFormatSettings = {
+                format: dateTimeFormat(),
+                useUTC: outputDateTimeFormatInUTC(),
+            }
 
-        const serializeableUri: SerializeableUri = {
-          path: uri.path,
-          scheme: uri.scheme
-        };
-  
-        const queryWorker = new Worker(workerPath, {
-          workerData: {
-            tabName: constants.REQUEST_SOURCE_QUERY_TAB,
-            uri: serializeableUri,
-            dateTimeFormatSettings: dateTimeFormatSettings,
-          }
-        });
-        this.queryTabWorker = comlink.wrap<BackendWorker>(nodeEndpoint(queryWorker));
+            const workerPath = __dirname + '/worker.js'
 
-        const dataWorker = new Worker(workerPath, {
-          workerData: {
-            tabName: constants.REQUEST_SOURCE_DATA_TAB,
-            uri: serializeableUri,
-            dateTimeFormatSettings: dateTimeFormatSettings,
-          }
-        });
-        this.dataTabWorker = comlink.wrap<BackendWorker>(nodeEndpoint(dataWorker));
-      }
+            const serializeableUri: SerializeableUri = {
+                path: uri.path,
+                scheme: uri.scheme,
+            }
+
+            const queryWorker = new Worker(workerPath, {
+                workerData: {
+                    tabName: constants.REQUEST_SOURCE_QUERY_TAB,
+                    uri: serializeableUri,
+                    dateTimeFormatSettings: dateTimeFormatSettings,
+                },
+            })
+            this.queryTabWorker = comlink.wrap<BackendWorker>(
+                nodeEndpoint(queryWorker)
+            )
+
+            const dataWorker = new Worker(workerPath, {
+                workerData: {
+                    tabName: constants.REQUEST_SOURCE_DATA_TAB,
+                    uri: serializeableUri,
+                    dateTimeFormatSettings: dateTimeFormatSettings,
+                },
+            })
+            this.dataTabWorker = comlink.wrap<BackendWorker>(
+                nodeEndpoint(dataWorker)
+            )
+        }
     }
 
-    private readonly _onDidDispose = this._register(new vscode.EventEmitter<void>());
+    private readonly _onDidDispose = this._register(
+        new vscode.EventEmitter<void>()
+    )
     /**
      * Fired when the document is disposed of.
      */
-    public readonly onDidDispose = this._onDidDispose.event;
+    public readonly onDidDispose = this._onDidDispose.event
 
-    private readonly _onDidChangeDocument = this._register(new vscode.EventEmitter<{
-      readonly rawData?: any;
-      readonly headers?: any;
-      readonly rowCount?: number;
-      readonly pageCount?: number;
-      readonly pageSize?: number;
-      readonly currentPage?: number;
-      readonly requestSource?: string;
-      readonly requestType?: string;
-      readonly schema?: any[];
-
-    }>());
+    private readonly _onDidChangeDocument = this._register(
+        new vscode.EventEmitter<{
+            readonly rawData?: any
+            readonly headers?: any
+            readonly rowCount?: number
+            readonly pageCount?: number
+            readonly pageSize?: number
+            readonly currentPage?: number
+            readonly requestSource?: string
+            readonly requestType?: string
+            readonly schema?: any[]
+        }>()
+    )
 
     /**
      * Fired to notify webviews that the document has changed.
-    */
-    public readonly onDidChangeContent = this._onDidChangeDocument.event;
+     */
+    public readonly onDidChangeContent = this._onDidChangeDocument.event
 
     fireChangedDocumentEvent(
-      rawData: any, 
-      headers: any, 
-      rowCount: number,
-      requestSource: string,
-      requestType: string,
-      pageSize: number,
-      pageNumber: number,
-      pageCount: number,
-      schema: any[] = [],
+        rawData: any,
+        headers: any,
+        rowCount: number,
+        requestSource: string,
+        requestType: string,
+        pageSize: number,
+        pageNumber: number,
+        pageCount: number,
+        schema: any[] = []
     ) {
-      // console.log(`fireChangedDocumentEvent(${this.uri}). Page {${this.currentPage}}`);
-      const tableData = {
-        rawData: rawData,
-        headers: headers,
-        rowCount: rowCount,
-        pageCount: pageCount,
-        pageSize: pageSize,
-        currentPage: pageNumber,
-        requestSource: requestSource,
-        requestType: requestType,
-        schema: schema,
-      };
-      this._onDidChangeDocument.fire(tableData);
+        // console.log(`fireChangedDocumentEvent(${this.uri}). Page {${this.currentPage}}`);
+        const tableData = {
+            rawData: rawData,
+            headers: headers,
+            rowCount: rowCount,
+            pageCount: pageCount,
+            pageSize: pageSize,
+            currentPage: pageNumber,
+            requestSource: requestSource,
+            requestType: requestType,
+            schema: schema,
+        }
+        this._onDidChangeDocument.fire(tableData)
     }
 
-    private readonly _onDidExport = this._register(new vscode.EventEmitter<{}>());
+    private readonly _onDidExport = this._register(
+        new vscode.EventEmitter<{}>()
+    )
 
     /**
      * Fired to notify webviews that the document has changed.
-    */
-    public readonly onDidExport = this._onDidExport.event;
+     */
+    public readonly onDidExport = this._onDidExport.event
 
-    private readonly _onError = this._register(new vscode.EventEmitter<{
-      readonly error?: string;
-    }>());
+    private readonly _onError = this._register(
+        new vscode.EventEmitter<{
+            readonly error?: string
+        }>()
+    )
 
     /**
      * Fired to notify webviews that the document has errorred.
-    */
-    public readonly onError = this._onError.event;
+     */
+    public readonly onError = this._onError.event
 
     fireErrorEvent(error: string) {
-      this._onError.fire({
-        error: error
-      });
+        this._onError.fire({
+            error: error,
+        })
     }
 
     /**
@@ -246,681 +272,805 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
      */
     dispose(): void {
         // console.log("CustomParquetDocument.dispose()");
-        this.backend.dispose();
-        this._onDidDispose.fire();
+        this.backend.dispose()
+        this._onDidDispose.fire()
 
         if (this.backend instanceof DuckDBBackend) {
-          this.queryTabWorker.exit();
+            this.queryTabWorker.exit()
         }
-        
-        super.dispose();
+
+        super.dispose()
     }
 
     fireDataPaginatorEvent(
-      values: any, 
-      rowCount: number,
-      pageSize: number, 
-      pageNumber: number, 
-      pageCount: number,
-      requestSource: string
-    ){
-      const headers = createHeadersFromData(values);
-      const requestType = 'paginator';
-      this.fireChangedDocumentEvent(
-        values, 
-        headers, 
-        rowCount,
-        requestSource,
-        requestType,
-        pageSize,
-        pageNumber,
-        pageCount
-      );
+        values: any,
+        rowCount: number,
+        pageSize: number,
+        pageNumber: number,
+        pageCount: number,
+        requestSource: string
+    ) {
+        const headers = createHeadersFromData(values)
+        const requestType = 'paginator'
+        this.fireChangedDocumentEvent(
+            values,
+            headers,
+            rowCount,
+            requestSource,
+            requestType,
+            pageSize,
+            pageNumber,
+            pageCount
+        )
     }
 
     fireExportCompleteEvent() {
-      this._onDidExport.fire({});
+        this._onDidExport.fire({})
     }
 
     async getPage(message: any) {
-      let queryResult;
-      if (message.source === constants.REQUEST_SOURCE_QUERY_TAB) {
-        queryResult = await this.queryTabWorker.getPage(message);
-      } else {
-        queryResult = await this.dataTabWorker.getPage(message);
-      }
+        let queryResult
+        if (message.source === constants.REQUEST_SOURCE_QUERY_TAB) {
+            queryResult = await this.queryTabWorker.getPage(message)
+        } else {
+            queryResult = await this.dataTabWorker.getPage(message)
+        }
 
-      this.fireDataPaginatorEvent(
-        queryResult.result, 
-        queryResult.rowCount,
-        queryResult.pageSize,
-        queryResult.pageNumber,
-        queryResult.pageCount,
-        message.source
-      );
+        this.fireDataPaginatorEvent(
+            queryResult.result,
+            queryResult.rowCount,
+            queryResult.pageSize,
+            queryResult.pageNumber,
+            queryResult.pageCount,
+            message.source
+        )
     }
 
     async emitPage(message: any) {
-      const workerMessage = {
-        source: message.source,
-        type: message.type,
-        pageSize: message.pageSize,
-        pageNumber: message.pageNumber,
-        sort: message.sort,
-        searchString: message.searchString
-      };
+        const workerMessage = {
+            source: message.source,
+            type: message.type,
+            pageSize: message.pageSize,
+            pageNumber: message.pageNumber,
+            sort: message.sort,
+            searchString: message.searchString,
+        }
 
-      await this.getPage(workerMessage);
+        await this.getPage(workerMessage)
     }
-    
+
     async query(message: any) {
-      try{
-        const queryResult = await this.queryTabWorker.query({
-          source: 'query',
-          query: message.query,
-        });
+        try {
+            const queryResult = await this.queryTabWorker.query({
+                source: 'query',
+                query: message.query,
+            })
+
+            this.fireChangedDocumentEvent(
+                queryResult.result,
+                queryResult.headers,
+                queryResult.rowCount,
+                constants.REQUEST_SOURCE_QUERY_TAB,
+                queryResult.type,
+                queryResult.pageSize,
+                queryResult.pageNumber,
+                queryResult.pageCount,
+                queryResult.schema
+            )
+        } catch (e: unknown) {
+            console.error(e)
+            const error = e as DuckDbError
+            this.fireErrorEvent(error.message)
+            vscode.window.showErrorMessage(error.message)
+        }
+    }
+
+    async changePageSize(message: any) {
+        const workerMessage = {
+            source: message.source,
+            type: 'currentPage',
+            pageSize: message.newPageSize,
+            sort: message.sort,
+            searchString: message.searchString,
+        }
+
+        await this.getPage(workerMessage)
+    }
+
+    async sort(message: any) {
+        const workerMessage = {
+            source: message.source,
+            type: 'firstPage',
+            pageSize: message.query.pageSize,
+            pageNumber: message.query.pageNumber,
+            sort: message.query.sort,
+            searchString: message.query.searchString,
+        }
+
+        await this.getPage(workerMessage)
+    }
+
+    async search(message: any) {
+        const queryResult = await this.queryTabWorker.search({
+            source: 'search',
+            query: {
+                pageNumber: 1,
+                pageSize: message.query.pageSize,
+                searchString: message.query.searchString,
+                queryString: message.query.queryString,
+                sort: message.query.sort,
+            },
+        })
 
         this.fireChangedDocumentEvent(
-            queryResult.result, 
-            queryResult.headers, 
+            queryResult.result,
+            queryResult.headers,
             queryResult.rowCount,
             constants.REQUEST_SOURCE_QUERY_TAB,
             queryResult.type,
             queryResult.pageSize,
             queryResult.pageNumber,
-            queryResult.pageCount,
-            queryResult.schema,
-        );
-
-      } catch (e: unknown) {
-          console.error(e);
-          const error = e as DuckDbError;
-          this.fireErrorEvent(error.message);
-          vscode.window.showErrorMessage(error.message);
-      }
-    }
-
-    async changePageSize(message: any) {
-      const workerMessage = {
-        source: message.source,
-        type: 'currentPage',
-        pageSize: message.newPageSize,
-        sort: message.sort,
-        searchString: message.searchString
-      };
-
-      await this.getPage(workerMessage);
-    }
-
-    async sort(message: any) {
-      const workerMessage = {
-        source: message.source,
-        type: 'firstPage',
-        pageSize: message.query.pageSize,
-        pageNumber: message.query.pageNumber,
-        sort: message.query.sort,
-        searchString: message.query.searchString,
-      };
-      
-      await this.getPage(workerMessage);
-    }
-
-    async search(message: any) {
-      const queryResult = await this.queryTabWorker.search({
-        source: 'search',
-        query: {
-          pageNumber: 1,
-          pageSize: message.query.pageSize,
-          searchString: message.query.searchString,
-          queryString: message.query.queryString,
-          sort: message.query.sort,
-        }
-      });
-
-      this.fireChangedDocumentEvent(
-          queryResult.result, 
-          queryResult.headers, 
-          queryResult.rowCount,
-          constants.REQUEST_SOURCE_QUERY_TAB,
-          queryResult.type,
-          queryResult.pageSize,
-          queryResult.pageNumber,
-          queryResult.pageCount,
-      );
+            queryResult.pageCount
+        )
     }
 
     async export(message: any) {
-      const exportType = message.exportType as string;
-      const parsedPath = path.parse(this.uri.fsPath);
+        const exportType = message.exportType as string
+        const parsedPath = path.parse(this.uri.fsPath)
 
-      const extension = constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType];
-      parsedPath.base = `${parsedPath.name}.${extension}`;
-      parsedPath.ext = extension;
-      const suggestedPath = path.format(parsedPath);
+        const extension =
+            constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType]
+        parsedPath.base = `${parsedPath.name}.${extension}`
+        parsedPath.ext = extension
+        const suggestedPath = path.format(parsedPath)
 
-      let suggestedUri: vscode.Uri;
-      if (this.savedExporturi !== undefined) {
-        const parsedPath = path.parse(this.savedExporturi.fsPath);
-        parsedPath.base = `${parsedPath.name}.${extension}`;
-        parsedPath.ext = extension;
-        suggestedUri = vscode.Uri.file(path.format(parsedPath));
-      } else {
-        suggestedUri = vscode.Uri.file(suggestedPath);
-      }
+        let suggestedUri: vscode.Uri
+        if (this.savedExporturi !== undefined) {
+            const parsedPath = path.parse(this.savedExporturi.fsPath)
+            parsedPath.base = `${parsedPath.name}.${extension}`
+            parsedPath.ext = extension
+            suggestedUri = vscode.Uri.file(path.format(parsedPath))
+        } else {
+            suggestedUri = vscode.Uri.file(suggestedPath)
+        }
 
-      const fileNameExtensionfullName = constants.FILENAME_SHORTNAME_FULLNAME_MAPPING[exportType];
-      const savedPath = await vscode.window.showSaveDialog({
-        title: `Export Query Results as ${exportType}`,
-        filters: {
-          [fileNameExtensionfullName]: [extension]
-        },
-        defaultUri: suggestedUri
-      });
-
-      if (savedPath === undefined) {
-        this.fireExportCompleteEvent();
-        return;
-      }
-
-      this.savedExporturi = savedPath;
-
-      try {
-        const exportResult = await this.queryTabWorker.export({
-          source: message.type,
-          exportType: exportType,
-          savedPath: savedPath.fsPath,
-          searchString: message.searchString,
-          sort: message.sort
-        });
-  
-        this.fireExportCompleteEvent();
-        vscode.window.showInformationMessage(
-          `Exported query result to ${exportResult.path}`, "Open folder"
-        ).then(selection => {
-          if (selection === "Open folder") {
-            this.openFolder(exportResult.path);
-          }
-        });
-
-      } catch (e: unknown) {
-          console.error(e);
-          const error = e as DuckDbError;
-          const errorMessage = `Export failed: ${error.message}`;
-          vscode.window.showErrorMessage(errorMessage);
-          this.fireErrorEvent(errorMessage);
-      }
-      return exportType;
-    }
-  }
-
-export class TabularDocumentEditorProvider implements vscode.CustomReadonlyEditorProvider<CustomDocument> {
-
-    private static readonly viewType = 'parquet-visualizer.parquetVisualizer';
-
-    public static register(context: vscode.ExtensionContext): vscode.Disposable {
-        const provider = new TabularDocumentEditorProvider(context);
-        return vscode.window.registerCustomEditorProvider(
-          TabularDocumentEditorProvider.viewType, 
-          provider,
-          {
-            // For this demo extension, we enable `retainContextWhenHidden` which keeps the
-            // webview alive even when it is not visible. You should avoid using this setting
-            // unless is absolutely required as it does have memory overhead.
-            webviewOptions: {
-              retainContextWhenHidden: true
+        const fileNameExtensionfullName =
+            constants.FILENAME_SHORTNAME_FULLNAME_MAPPING[exportType]
+        const savedPath = await vscode.window.showSaveDialog({
+            title: `Export Query Results as ${exportType}`,
+            filters: {
+                [fileNameExtensionfullName]: [extension],
             },
-            supportsMultipleEditorsPerDocument: false
-          }
-        );
+            defaultUri: suggestedUri,
+        })
+
+        if (savedPath === undefined) {
+            this.fireExportCompleteEvent()
+            return
+        }
+
+        this.savedExporturi = savedPath
+
+        try {
+            const exportResult = await this.queryTabWorker.export({
+                source: message.type,
+                exportType: exportType,
+                savedPath: savedPath.fsPath,
+                searchString: message.searchString,
+                sort: message.sort,
+            })
+
+            this.fireExportCompleteEvent()
+            vscode.window
+                .showInformationMessage(
+                    `Exported query result to ${exportResult.path}`,
+                    'Open folder'
+                )
+                .then((selection) => {
+                    if (selection === 'Open folder') {
+                        this.openFolder(exportResult.path)
+                    }
+                })
+        } catch (e: unknown) {
+            console.error(e)
+            const error = e as DuckDbError
+            const errorMessage = `Export failed: ${error.message}`
+            vscode.window.showErrorMessage(errorMessage)
+            this.fireErrorEvent(errorMessage)
+        }
+        return exportType
+    }
+}
+
+export class TabularDocumentEditorProvider
+    implements vscode.CustomReadonlyEditorProvider<CustomDocument>
+{
+    private static readonly viewType = 'parquet-visualizer.parquetVisualizer'
+
+    public static register(
+        context: vscode.ExtensionContext
+    ): vscode.Disposable {
+        const provider = new TabularDocumentEditorProvider(context)
+        return vscode.window.registerCustomEditorProvider(
+            TabularDocumentEditorProvider.viewType,
+            provider,
+            {
+                // For this demo extension, we enable `retainContextWhenHidden` which keeps the
+                // webview alive even when it is not visible. You should avoid using this setting
+                // unless is absolutely required as it does have memory overhead.
+                webviewOptions: {
+                    retainContextWhenHidden: true,
+                },
+                supportsMultipleEditorsPerDocument: false,
+            }
+        )
     }
 
     /**
      * Tracks all known webviews
      */
-    private readonly webviews = new WebviewCollection();
+    private readonly webviews = new WebviewCollection()
 
-    private listeners: vscode.Disposable[] = [];
+    private listeners: vscode.Disposable[] = []
 
-    constructor(
-        private readonly context: vscode.ExtensionContext
-    ) { }
+    constructor(private readonly context: vscode.ExtensionContext) {}
 
     dispose() {
         // console.log("ParquetEditorProvider.dispose()");
-        this.listeners.forEach(l => l.dispose());
-        this._onDidChangeCustomDocument.dispose();
+        this.listeners.forEach((l) => l.dispose())
+        this._onDidChangeCustomDocument.dispose()
     }
 
     async openCustomDocument(uri: vscode.Uri): Promise<CustomDocument> {
         // console.log(`openCustomDocument(uri: ${uri})`);
-        const document: CustomDocument = await CustomDocument.create(uri);
-        
-        this.listeners.push(vscode.window.onDidChangeActiveColorTheme((e => {
-          const cssPathNames = getCssPathNameByVscodeTheme(e.kind);
-          const pathMainCssFile = vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'styles', cssPathNames.mainCssFile
-          );
+        const document: CustomDocument = await CustomDocument.create(uri)
 
-          const pathTabsCssFile = vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'styles', cssPathNames.tabsCssFile
-          );
+        this.listeners.push(
+            vscode.window.onDidChangeActiveColorTheme((e) => {
+                const cssPathNames = getCssPathNameByVscodeTheme(e.kind)
+                const pathMainCssFile = vscode.Uri.joinPath(
+                    this.context.extensionUri,
+                    'media',
+                    'styles',
+                    cssPathNames.mainCssFile
+                )
 
-          const aceTheme = getAceTheme(e.kind);
-          for (const webviewPanel of this.webviews.get(document.uri)) {
-            this.postMessage(webviewPanel, 'colorThemeChange', {
-              aceTheme: aceTheme,
-              pathMainCssFile: webviewPanel.webview.asWebviewUri(pathMainCssFile).toString(true),
-              pathTabsCssFile: webviewPanel.webview.asWebviewUri(pathTabsCssFile).toString(true)
-            });
-          }
-        })));
+                const pathTabsCssFile = vscode.Uri.joinPath(
+                    this.context.extensionUri,
+                    'media',
+                    'styles',
+                    cssPathNames.tabsCssFile
+                )
 
-        this.listeners.push(vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
-          if (affectsDocument(e)) {
-            console.log("settings changed");
-          }
-        }));
+                const aceTheme = getAceTheme(e.kind)
+                for (const webviewPanel of this.webviews.get(document.uri)) {
+                    this.postMessage(webviewPanel, 'colorThemeChange', {
+                        aceTheme: aceTheme,
+                        pathMainCssFile: webviewPanel.webview
+                            .asWebviewUri(pathMainCssFile)
+                            .toString(true),
+                        pathTabsCssFile: webviewPanel.webview
+                            .asWebviewUri(pathTabsCssFile)
+                            .toString(true),
+                    })
+                }
+            })
+        )
 
-        this.listeners.push(document.onError(e => {
-          // Update all webviews when one document has an error
-          for (const webviewPanel of this.webviews.get(document.uri)) {
-            this.postMessage(webviewPanel, 'error', {
-                type: 'error'
-            });
-          }
-        }));
+        this.listeners.push(
+            vscode.workspace.onDidChangeConfiguration(
+                (e: vscode.ConfigurationChangeEvent) => {
+                    if (affectsDocument(e)) {
+                        console.log('settings changed')
+                    }
+                }
+            )
+        )
 
-        this.listeners.push(document.onDidExport(e => {
-          // Update all webviews when one document has an error
-          for (const webviewPanel of this.webviews.get(document.uri)) {
-            this.postMessage(webviewPanel, 'exportComplete', {
-                type: 'exportComplete'
-            });
-          }
-        }));
+        this.listeners.push(
+            document.onError((e) => {
+                // Update all webviews when one document has an error
+                for (const webviewPanel of this.webviews.get(document.uri)) {
+                    this.postMessage(webviewPanel, 'error', {
+                        type: 'error',
+                    })
+                }
+            })
+        )
 
-        this.listeners.push(document.onDidChangeContent(e => {
-          const dataChange = {
-            headers : e.headers,
-            rawData: e.rawData,
-            rowCount: e.rowCount,
-            pageCount: e.pageCount,
-            pageSize: e.pageSize,
-            currentPage: e.currentPage,
-            requestSource: e.requestSource,
-            requestType: e.requestType,
-            schema: e.schema,
-          };
+        this.listeners.push(
+            document.onDidExport((e) => {
+                // Update all webviews when one document has an error
+                for (const webviewPanel of this.webviews.get(document.uri)) {
+                    this.postMessage(webviewPanel, 'exportComplete', {
+                        type: 'exportComplete',
+                    })
+                }
+            })
+        )
 
-          // Update all webviews when the document changes
-          for (const webviewPanel of this.webviews.get(document.uri)) {
-            this.postMessage(webviewPanel, 'update', {
-                type: 'update',
-                tableData: dataChange
-            });
-          }
-        }));
+        this.listeners.push(
+            document.onDidChangeContent((e) => {
+                const dataChange = {
+                    headers: e.headers,
+                    rawData: e.rawData,
+                    rowCount: e.rowCount,
+                    pageCount: e.pageCount,
+                    pageSize: e.pageSize,
+                    currentPage: e.currentPage,
+                    requestSource: e.requestSource,
+                    requestType: e.requestType,
+                    schema: e.schema,
+                }
 
-        return document;
+                // Update all webviews when the document changes
+                for (const webviewPanel of this.webviews.get(document.uri)) {
+                    this.postMessage(webviewPanel, 'update', {
+                        type: 'update',
+                        tableData: dataChange,
+                    })
+                }
+            })
+        )
+
+        return document
     }
 
     createShortcutMapping(input: string): { win: string; mac: string } {
-      if (input.startsWith("Ctrl-")) {
-          const suffix = input.substring(5); // Remove "Ctrl-" from the start
-          return {
-              win: `Ctrl-${suffix}`,
-              mac: `Command-${suffix}`,
-          };
-      } else if (input.startsWith("Command-")) {
-          const suffix = input.substring(8); // Remove "Command-" from the start
-          return {
-              win: `Ctrl-${suffix}`,
-              mac: `Command-${suffix}`,
-          };
-      } else {
-         // Show an error message to the user
-          const errorMessage = 'Value of setting "parquet-visualizer.RunQueryKeyBinding" invalid. The string must start with "Ctrl-" or "Command-".';
-          vscode.window.showErrorMessage(`${errorMessage}`);
-          throw Error(errorMessage);
-      }
+        if (input.startsWith('Ctrl-')) {
+            const suffix = input.substring(5) // Remove "Ctrl-" from the start
+            return {
+                win: `Ctrl-${suffix}`,
+                mac: `Command-${suffix}`,
+            }
+        } else if (input.startsWith('Command-')) {
+            const suffix = input.substring(8) // Remove "Command-" from the start
+            return {
+                win: `Ctrl-${suffix}`,
+                mac: `Command-${suffix}`,
+            }
+        } else {
+            // Show an error message to the user
+            const errorMessage =
+                'Value of setting "parquet-visualizer.RunQueryKeyBinding" invalid. The string must start with "Ctrl-" or "Command-".'
+            vscode.window.showErrorMessage(`${errorMessage}`)
+            throw Error(errorMessage)
+        }
     }
 
-    getAceEditorCompletions(schema: any){
-      let formattedSchema: any = {};
-      for (const key in schema){
-        const columnName = schema[key].name;
-        const columnType = schema[key].typeValue;
-        
-        formattedSchema[columnName] = columnType;
-      }
+    getAceEditorCompletions(schema: any) {
+        let formattedSchema: any = {}
+        for (const key in schema) {
+            const columnName = schema[key].name
+            const columnType = schema[key].typeValue
 
-      function getCompletion(columnTypeValue: any, prevColumnName: string = ''){
-        let completions: any = {};
-        for (const key in columnTypeValue) {
-          if (!columnTypeValue.hasOwnProperty(key)) {
-            continue;
-          }
-
-          const newNamePrefix = prevColumnName ? `${prevColumnName}.${key}` : key;
-          
-          if (typeof columnTypeValue[key] === 'object' && !Array.isArray(columnTypeValue[key])) {
-            completions[newNamePrefix] = columnTypeValue[key];
-            
-            Object.assign(completions, getCompletion(columnTypeValue[key], newNamePrefix));
-
-          } else if (Array.isArray(columnTypeValue[key])) {
-            completions[newNamePrefix] = columnTypeValue[key];
-          }
-          else {
-            completions[newNamePrefix] = columnTypeValue[key];
-          }
-        }
-        return completions;
-      }
-
-      const completions = getCompletion(formattedSchema);
-      const aceEditorCompletions = Object.entries(completions).reverse().map((e, i) => {
-        let htmlForDataType: string;
-        if (typeof e[1] === 'object'){
-          htmlForDataType = `<pre>${JSON.stringify(e[1], undefined, 4)}</pre>`;
-        }
-        else {
-          htmlForDataType = `${e[1]}`;
+            formattedSchema[columnName] = columnType
         }
 
-        let docHtml = `<strong>Name</strong> ${e[0]}<br><strong>Type</strong>: ${htmlForDataType}`;
-        let value = e[0];
-        if (value.includes(' ')) {
-          value = `"${value}"`;
+        function getCompletion(
+            columnTypeValue: any,
+            prevColumnName: string = ''
+        ) {
+            let completions: any = {}
+            for (const key in columnTypeValue) {
+                if (!columnTypeValue.hasOwnProperty(key)) {
+                    continue
+                }
+
+                const newNamePrefix = prevColumnName
+                    ? `${prevColumnName}.${key}`
+                    : key
+
+                if (
+                    typeof columnTypeValue[key] === 'object' &&
+                    !Array.isArray(columnTypeValue[key])
+                ) {
+                    completions[newNamePrefix] = columnTypeValue[key]
+
+                    Object.assign(
+                        completions,
+                        getCompletion(columnTypeValue[key], newNamePrefix)
+                    )
+                } else if (Array.isArray(columnTypeValue[key])) {
+                    completions[newNamePrefix] = columnTypeValue[key]
+                } else {
+                    completions[newNamePrefix] = columnTypeValue[key]
+                }
+            }
+            return completions
         }
 
-        return {
-          value: value,
-          score: i + 1000, // NOTE: just to get the column meta above the other meta.
-          meta: 'column',
-          docHTML: docHtml,
-        };
-      });
+        const completions = getCompletion(formattedSchema)
+        const aceEditorCompletions = Object.entries(completions)
+            .reverse()
+            .map((e, i) => {
+                let htmlForDataType: string
+                if (typeof e[1] === 'object') {
+                    htmlForDataType = `<pre>${JSON.stringify(e[1], undefined, 4)}</pre>`
+                } else {
+                    htmlForDataType = `${e[1]}`
+                }
 
-      return aceEditorCompletions;
+                let docHtml = `<strong>Name</strong> ${e[0]}<br><strong>Type</strong>: ${htmlForDataType}`
+                let value = e[0]
+                if (value.includes(' ')) {
+                    value = `"${value}"`
+                }
+
+                return {
+                    value: value,
+                    score: i + 1000, // NOTE: just to get the column meta above the other meta.
+                    meta: 'column',
+                    docHTML: docHtml,
+                }
+            })
+
+        return aceEditorCompletions
     }
-    
+
     /**
      * Called when our custom editor is opened.
-     * 
-     * 
+     *
+     *
      */
     async resolveCustomEditor(
         document: CustomDocument,
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-
         // console.log(`resolveCustomEditor(${document.uri})`);
-        this.webviews.add(document.uri, webviewPanel);
+        this.webviews.add(document.uri, webviewPanel)
 
         // Setup initial content for the webview
         webviewPanel.webview.options = {
             enableScripts: true,
-        };
-
-        webviewPanel.webview.html = this.getHtmlForWebview(
-          webviewPanel.webview, document.isQueryAble
-        );
-      
-        webviewPanel.webview.onDidReceiveMessage(e => this.onMessage(document, e));
-
-        const defaultPageSizesFromSettings = defaultPageSizes(); 
-        const firstPageSize = defaultPageSizesFromSettings[0];
-        const defaultQueryFromSettings = defaultQuery();
-        const pageSize = Number(firstPageSize);
-
-        let queryTabQueryData = {
-          result: [] as any[],
-          headers: [] as any[],
-          rowCount: 0,
-          pageCount: 0
-        };
-        if (runQueryOnStartup()) {
-          const queryMessage = {
-            source: 'query',
-            query: {
-              queryString: defaultQueryFromSettings,
-              pageSize: pageSize,
-            }
-          };
-          
-          try {
-            const {result, headers, rowCount, pageCount } = await document.queryTabWorker.query(queryMessage);
-            queryTabQueryData.result = result;
-            queryTabQueryData.headers = headers;
-            queryTabQueryData.rowCount = rowCount;
-            queryTabQueryData.pageCount = pageCount;
-          }
-          catch (e: unknown) {
-            console.error(e);
-            const error = e as DuckDbError;
-            this.dispose();
-            vscode.window.showErrorMessage(error.message);
-            throw Error(error.message);
-          }
         }
 
-        const totalRowCount = document.backend.getRowCount();
-        const totalPageCount = Math.ceil(totalRowCount / pageSize);
+        webviewPanel.webview.html = this.getHtmlForWebview(
+            webviewPanel.webview,
+            document.isQueryAble
+        )
 
-        const schema = document.backend.getSchema();
-        const metadata = document.backend.getMetaData();
+        webviewPanel.webview.onDidReceiveMessage((e) =>
+            this.onMessage(document, e)
+        )
 
-        const aceEditorCompletions = this.getAceEditorCompletions(schema);
-        const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind);
-        const defaultRunQueryKeyBindingFromSettings = defaultRunQueryKeyBinding();
-        const shortCutMapping = this.createShortcutMapping(defaultRunQueryKeyBindingFromSettings);
+        const defaultPageSizesFromSettings = defaultPageSizes()
+        const firstPageSize = defaultPageSizesFromSettings[0]
+        const defaultQueryFromSettings = defaultQuery()
+        const pageSize = Number(firstPageSize)
+
+        let queryTabQueryData = {
+            result: [] as any[],
+            headers: [] as any[],
+            rowCount: 0,
+            pageCount: 0,
+        }
+        if (runQueryOnStartup()) {
+            const queryMessage = {
+                source: 'query',
+                query: {
+                    queryString: defaultQueryFromSettings,
+                    pageSize: pageSize,
+                },
+            }
+
+            try {
+                const { result, headers, rowCount, pageCount } =
+                    await document.queryTabWorker.query(queryMessage)
+                queryTabQueryData.result = result
+                queryTabQueryData.headers = headers
+                queryTabQueryData.rowCount = rowCount
+                queryTabQueryData.pageCount = pageCount
+            } catch (e: unknown) {
+                console.error(e)
+                const error = e as DuckDbError
+                this.dispose()
+                vscode.window.showErrorMessage(error.message)
+                throw Error(error.message)
+            }
+        }
+
+        const totalRowCount = document.backend.getRowCount()
+        const totalPageCount = Math.ceil(totalRowCount / pageSize)
+
+        const schema = document.backend.getSchema()
+        const metadata = document.backend.getMetaData()
+
+        const aceEditorCompletions = this.getAceEditorCompletions(schema)
+        const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind)
+        const defaultRunQueryKeyBindingFromSettings =
+            defaultRunQueryKeyBinding()
+        const shortCutMapping = this.createShortcutMapping(
+            defaultRunQueryKeyBindingFromSettings
+        )
 
         const data = {
-          headers: queryTabQueryData.headers, 
-          schema: schema, 
-          metaData: metadata, 
-          rawData: queryTabQueryData.result,
-          rowCount: queryTabQueryData.rowCount,
-          pageCount: queryTabQueryData.pageCount,
-          currentPage: 1,
-          requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
-          requestType: 'paginator',
-          settings: {
-            defaultQuery: defaultQueryFromSettings,
-            defaultPageSizes: defaultPageSizesFromSettings,
-            shortCutMapping: shortCutMapping
-          },
-          isQueryAble: document.isQueryAble,
-          aceTheme: aceTheme,
-          aceEditorCompletions,
-          totalRowCount: totalRowCount,
-          totalPageCount: totalPageCount
-        };
+            headers: queryTabQueryData.headers,
+            schema: schema,
+            metaData: metadata,
+            rawData: queryTabQueryData.result,
+            rowCount: queryTabQueryData.rowCount,
+            pageCount: queryTabQueryData.pageCount,
+            currentPage: 1,
+            requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
+            requestType: 'paginator',
+            settings: {
+                defaultQuery: defaultQueryFromSettings,
+                defaultPageSizes: defaultPageSizesFromSettings,
+                shortCutMapping: shortCutMapping,
+            },
+            isQueryAble: document.isQueryAble,
+            aceTheme: aceTheme,
+            aceEditorCompletions,
+            totalRowCount: totalRowCount,
+            totalPageCount: totalPageCount,
+        }
 
         // Wait for the webview to be properly ready before we init
-        webviewPanel.webview.onDidReceiveMessage(e => {
-          if (e.type === 'ready') {
-            if (document.uri.scheme === 'untitled') {
-              this.postMessage(webviewPanel, 'init', {
-                tableData: data,
-              });
-            } else {
-              this.postMessage(webviewPanel, 'init', {
-                tableData: data,
-              });
+        webviewPanel.webview.onDidReceiveMessage((e) => {
+            if (e.type === 'ready') {
+                if (document.uri.scheme === 'untitled') {
+                    this.postMessage(webviewPanel, 'init', {
+                        tableData: data,
+                    })
+                } else {
+                    this.postMessage(webviewPanel, 'init', {
+                        tableData: data,
+                    })
 
-              
-              // NOTE: start query on datatab.
-              const pageSize = Number(firstPageSize);
-              const queryMessage = {
-                query: {
-                  queryString: defaultQueryFromSettings,
-                  pageSize: pageSize,
+                    // NOTE: start query on datatab.
+                    const pageSize = Number(firstPageSize)
+                    const queryMessage = {
+                        query: {
+                            queryString: defaultQueryFromSettings,
+                            pageSize: pageSize,
+                        },
+                    }
+
+                    document.dataTabWorker
+                        .query(queryMessage)
+                        .then((result) => {
+                            document.fireChangedDocumentEvent(
+                                result.result,
+                                result.headers,
+                                totalRowCount,
+                                constants.REQUEST_SOURCE_DATA_TAB,
+                                result.type,
+                                result.pageSize,
+                                result.pageNumber,
+                                totalPageCount
+                            )
+                        })
                 }
-              };
-
-              document.dataTabWorker.query(queryMessage).then((result) => {
-                document.fireChangedDocumentEvent(
-                  result.result, 
-                  result.headers, 
-                  totalRowCount,
-                  constants.REQUEST_SOURCE_DATA_TAB,
-                  result.type,
-                  result.pageSize,
-                  result.pageNumber,
-                  totalPageCount,
-                );
-              });
             }
-          }
-        });
+        })
     }
 
-    private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<CustomDocument>>();
-	  public readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
+    private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
+        vscode.CustomDocumentEditEvent<CustomDocument>
+    >()
+    public readonly onDidChangeCustomDocument =
+        this._onDidChangeCustomDocument.event
 
-    private postMessage(panel: vscode.WebviewPanel, type: string, body: any): void {
-      panel.webview.postMessage({ type, body });
+    private postMessage(
+        panel: vscode.WebviewPanel,
+        type: string,
+        body: any
+    ): void {
+        panel.webview.postMessage({ type, body })
     }
 
     private async onMessage(document: CustomDocument, message: any) {
-    //   console.log(`onMessage(${message.type})`);
-      switch (message.type) {
-        case 'nextPage': {
-          await document.emitPage(message);
+        //   console.log(`onMessage(${message.type})`);
+        switch (message.type) {
+            case 'nextPage': {
+                await document.emitPage(message)
 
-          TelemetryManager.sendEvent("nextPageButtonClicked", {tabSource: message.source});
-          break;
-        }
-        case 'prevPage': {
-          await document.emitPage(message);
-
-          TelemetryManager.sendEvent("prevPageButtonClicked", {tabSource: message.source});
-          break;
-        }
-        case 'firstPage': {
-          await document.emitPage(message);
-
-          TelemetryManager.sendEvent("firstPageButtonClicked", {tabSource: message.source});
-          break;
-        }
-        case 'lastPage': {
-          await document.emitPage(message);
-
-          TelemetryManager.sendEvent("lastPageButtonClicked", {tabSource: message.source});
-          break;
-        }
-        case 'changePageSize': {
-          await document.changePageSize(message.data);
-
-          TelemetryManager.sendEvent("pageSizeChanged", {tabSource: message.data.source});
-          break;
-        }
-        case 'startQuery': {
-          await document.query(message);
-
-          TelemetryManager.sendEvent("queryStarted");
-          break;
-        }
-        case 'onSort': {
-          await document.sort(message);
-          TelemetryManager.sendEvent("onSort", {tabSource: message.source});
-          break;
-        }
-        case 'onSearch': {
-          await document.search(message);
-          TelemetryManager.sendEvent("onSearch");
-          break;
-        }
-        case 'exportQueryResults': {
-          const exportType = await document.export(message);
-          TelemetryManager.sendEvent("queryResultsExported", {
-              fromFileType: 'parquet',
-              toFileType: exportType as string
+                TelemetryManager.sendEvent('nextPageButtonClicked', {
+                    tabSource: message.source,
+                })
+                break
             }
-          );
-          break;
-        }
-        case 'copyQueryResults': {
-          vscode.window.showInformationMessage("Query result page data copied");
+            case 'prevPage': {
+                await document.emitPage(message)
 
-          TelemetryManager.sendEvent("queryResultsCopied");
-          break;
-        }
+                TelemetryManager.sendEvent('prevPageButtonClicked', {
+                    tabSource: message.source,
+                })
+                break
+            }
+            case 'firstPage': {
+                await document.emitPage(message)
 
-        case 'onPopupOpened': {
-          TelemetryManager.sendEvent("popupOpenened", {tabSource: message.tab});
-          break;
+                TelemetryManager.sendEvent('firstPageButtonClicked', {
+                    tabSource: message.source,
+                })
+                break
+            }
+            case 'lastPage': {
+                await document.emitPage(message)
+
+                TelemetryManager.sendEvent('lastPageButtonClicked', {
+                    tabSource: message.source,
+                })
+                break
+            }
+            case 'changePageSize': {
+                await document.changePageSize(message.data)
+
+                TelemetryManager.sendEvent('pageSizeChanged', {
+                    tabSource: message.data.source,
+                })
+                break
+            }
+            case 'startQuery': {
+                await document.query(message)
+
+                TelemetryManager.sendEvent('queryStarted')
+                break
+            }
+            case 'onSort': {
+                await document.sort(message)
+                TelemetryManager.sendEvent('onSort', {
+                    tabSource: message.source,
+                })
+                break
+            }
+            case 'onSearch': {
+                await document.search(message)
+                TelemetryManager.sendEvent('onSearch')
+                break
+            }
+            case 'exportQueryResults': {
+                const exportType = await document.export(message)
+                TelemetryManager.sendEvent('queryResultsExported', {
+                    fromFileType: 'parquet',
+                    toFileType: exportType as string,
+                })
+                break
+            }
+            case 'copyQueryResults': {
+                vscode.window.showInformationMessage(
+                    'Query result page data copied'
+                )
+
+                TelemetryManager.sendEvent('queryResultsCopied')
+                break
+            }
+
+            case 'onPopupOpened': {
+                TelemetryManager.sendEvent('popupOpenened', {
+                    tabSource: message.tab,
+                })
+                break
+            }
         }
-      }
     }
 
-    private fillTemplate(template: string, variables: { [key: string]: string | number }): string {
+    private fillTemplate(
+        template: string,
+        variables: { [key: string]: string | number }
+    ): string {
         return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-            return String(variables[key] || '');
-        });
+            return String(variables[key] || '')
+        })
     }
 
-    private getHtmlForWebview(webview: vscode.Webview, isQueryAble: boolean): string {
+    private getHtmlForWebview(
+        webview: vscode.Webview,
+        isQueryAble: boolean
+    ): string {
         // Local path to script and css for the webview
-        const scripts = webview.asWebviewUri(vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'scripts')
-        );
-        const styles = webview.asWebviewUri(vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'styles')
-        );
+        const scripts = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.context.extensionUri, 'media', 'scripts')
+        )
+        const styles = webview.asWebviewUri(
+            vscode.Uri.joinPath(this.context.extensionUri, 'media', 'styles')
+        )
 
-        const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'styles', 'reset.css'));
+        const styleResetUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'reset.css'
+            )
+        )
 
-        const styleVSCodeUri = webview.asWebviewUri(vscode.Uri.joinPath(
-            this.context.extensionUri, 'media', 'styles', 'vscode.css'));
+        const styleVSCodeUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'vscode.css'
+            )
+        )
 
-        const cssPathNames = getCssPathNameByVscodeTheme(vscode.window.activeColorTheme.kind);
-        
-        const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', 'parquet-visualizer.css'));
-        
-        const styleMainColorUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', cssPathNames.mainCssFile));
+        const cssPathNames = getCssPathNameByVscodeTheme(
+            vscode.window.activeColorTheme.kind
+        )
 
-        const styleTabulatorUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', 'tabulator', 'tabulator.min.css'));
+        const styleMainUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'parquet-visualizer.css'
+            )
+        )
 
-        const styleFontAwesomeUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', 'font-awesome', 'all.min.css'));
+        const styleMainColorUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                cssPathNames.mainCssFile
+            )
+        )
 
-        const styleTabsUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', 'tabs.css'));
+        const styleTabulatorUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'tabulator',
+                'tabulator.min.css'
+            )
+        )
 
-        const styleTabsColorUri = webview.asWebviewUri(vscode.Uri.joinPath(
-        	this.context.extensionUri, 'media', 'styles', cssPathNames.tabsCssFile));
+        const styleFontAwesomeUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'font-awesome',
+                'all.min.css'
+            )
+        )
 
-        const nonce = getNonce();
+        const styleTabsUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                'tabs.css'
+            )
+        )
+
+        const styleTabsColorUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(
+                this.context.extensionUri,
+                'media',
+                'styles',
+                cssPathNames.tabsCssFile
+            )
+        )
+
+        const nonce = getNonce()
 
         let vars = {
-          cspSource: webview.cspSource,
-          scripts: scripts.toString(true),
-          styles: styles.toString(true),
-          styleResetUri: styleResetUri.toString(true),
-          styleVSCodeUri: styleVSCodeUri.toString(true),
-          styleMainUri: styleMainUri.toString(true),
-          styleMainColorUri: styleMainColorUri.toString(true),
-          styleFontAwesomeUri: styleFontAwesomeUri.toString(true),
-          styleTabulatorUri: styleTabulatorUri.toString(true),
-          styleTabsUri : styleTabsUri.toString(true),
-          styleTabsColorUri : styleTabsColorUri.toString(true),
-          nonce: nonce,
-        };
+            cspSource: webview.cspSource,
+            scripts: scripts.toString(true),
+            styles: styles.toString(true),
+            styleResetUri: styleResetUri.toString(true),
+            styleVSCodeUri: styleVSCodeUri.toString(true),
+            styleMainUri: styleMainUri.toString(true),
+            styleMainColorUri: styleMainColorUri.toString(true),
+            styleFontAwesomeUri: styleFontAwesomeUri.toString(true),
+            styleTabulatorUri: styleTabulatorUri.toString(true),
+            styleTabsUri: styleTabsUri.toString(true),
+            styleTabsColorUri: styleTabsColorUri.toString(true),
+            nonce: nonce,
+        }
 
-        let queryActionsBodyHtml = '';
+        let queryActionsBodyHtml = ''
 
         if (!isQueryAble) {
-          queryActionsBodyHtml = "<p>The loaded backend does not support SQL.</p>";
+            queryActionsBodyHtml =
+                '<p>The loaded backend does not support SQL.</p>'
         } else {
-          queryActionsBodyHtml = `
+            queryActionsBodyHtml = `
               <div id="editor"></div>
               <div id="query-actions" class="button-container">
 
@@ -970,7 +1120,7 @@ export class TabularDocumentEditorProvider implements vscode.CustomReadonlyEdito
                 </div>
               </div>
               <div id="table-queryTab"></div>
-          `;
+          `
         }
 
         const html = `
@@ -1047,72 +1197,70 @@ export class TabularDocumentEditorProvider implements vscode.CustomReadonlyEdito
               <script nonce="{{nonce}}" src="{{scripts}}/main.js"></script>
           </body>
           </html>
-        `;
-        return this.fillTemplate(html, vars);
+        `
+        return this.fillTemplate(html, vars)
         // Use a nonce to whitelist which scripts can be run
     }
-
 }
 
 /**
  * Tracks all webviews.
  */
 class WebviewCollection {
+    private readonly _webviews = new Set<{
+        readonly resource: string
+        readonly webviewPanel: vscode.WebviewPanel
+    }>()
 
-	private readonly _webviews = new Set<{
-		readonly resource: string;
-		readonly webviewPanel: vscode.WebviewPanel;
-	}>();
+    /**
+     * Get all known webviews for a given uri.
+     */
+    public *get(uri: vscode.Uri): Iterable<vscode.WebviewPanel> {
+        const key = uri.toString()
+        for (const entry of this._webviews) {
+            if (entry.resource === key) {
+                yield entry.webviewPanel
+            }
+        }
+    }
 
-	/**
-	 * Get all known webviews for a given uri.
-	 */
-	public *get(uri: vscode.Uri): Iterable<vscode.WebviewPanel> {
-		const key = uri.toString();
-		for (const entry of this._webviews) {
-			if (entry.resource === key) {
-				yield entry.webviewPanel;
-			}
-		}
-	}
+    /**
+     * Add a new webview to the collection.
+     */
+    public add(uri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
+        const entry = { resource: uri.toString(), webviewPanel }
+        this._webviews.add(entry)
 
-	/**
-	 * Add a new webview to the collection.
-	 */
-	public add(uri: vscode.Uri, webviewPanel: vscode.WebviewPanel) {
-		const entry = { resource: uri.toString(), webviewPanel };
-		this._webviews.add(entry);
-
-		webviewPanel.onDidDispose(() => {
-      // console.log("webviewPanel.OnDidDispose");
-			this._webviews.delete(entry);
-		});
-	}
+        webviewPanel.onDidDispose(() => {
+            // console.log("webviewPanel.OnDidDispose");
+            this._webviews.delete(entry)
+        })
+    }
 }
 
-function getAceTheme(themeKind: vscode.ColorThemeKind){
-  let aceTheme = '';
-  if (themeKind === vscode.ColorThemeKind.Light) {
-    aceTheme = 'ace/theme/dawn';
-  } else {
-    aceTheme = 'ace/theme/idle_fingers';
-  }
-  return aceTheme;
+function getAceTheme(themeKind: vscode.ColorThemeKind) {
+    let aceTheme = ''
+    if (themeKind === vscode.ColorThemeKind.Light) {
+        aceTheme = 'ace/theme/dawn'
+    } else {
+        aceTheme = 'ace/theme/idle_fingers'
+    }
+    return aceTheme
 }
 
-function getCssPathNameByVscodeTheme(themeKind: vscode.ColorThemeKind){
-  let tabsColorCssFile = '';
-  let parquetEditorColorCssFile = '';
-  if (themeKind === vscode.ColorThemeKind.Light) {
-    tabsColorCssFile = 'tabs-color-light.css';
-    parquetEditorColorCssFile = 'parquet-visualizer-color-light.css';
-  } else {
-    tabsColorCssFile = 'tabs-color-dark.css';
-    parquetEditorColorCssFile = 'parquet-visualizer-color-dark.css';
-  }
+function getCssPathNameByVscodeTheme(themeKind: vscode.ColorThemeKind) {
+    let tabsColorCssFile = ''
+    let parquetEditorColorCssFile = ''
+    if (themeKind === vscode.ColorThemeKind.Light) {
+        tabsColorCssFile = 'tabs-color-light.css'
+        parquetEditorColorCssFile = 'parquet-visualizer-color-light.css'
+    } else {
+        tabsColorCssFile = 'tabs-color-dark.css'
+        parquetEditorColorCssFile = 'parquet-visualizer-color-dark.css'
+    }
 
-  return {
-    mainCssFile: parquetEditorColorCssFile,
-    tabsCssFile: tabsColorCssFile
-  };
+    return {
+        mainCssFile: parquetEditorColorCssFile,
+        tabsCssFile: tabsColorCssFile,
+    }
 }

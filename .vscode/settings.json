@@ -1,5 +1,6 @@
 // Place your settings in this file to overwrite default and user settings.
 {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "files.exclude": {
         "out": false // set this to true to hide the "out" folder with the compiled JS files
     },
@@ -10,7 +11,7 @@
     "typescript.tsc.autoDetect": "off",
     "typescript.reportStyleChecksAsWarnings": true,
 
-    "parquet-visualizer.defaultPageSizes": [10, 50, 100],
+    "parquet-visualizer.defaultPageSizes": ["10", "50", "100"],
     "parquet-visualizer.backend": "duckdb",
     "parquet-visualizer.defaultQuery": "SELECT *\r\nFROM data\r\nLIMIT 1000;",
     "parquet-visualizer.RunQueryKeyBinding": "Ctrl-Enter",

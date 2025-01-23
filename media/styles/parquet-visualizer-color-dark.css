@@ -1,36 +1,36 @@
-#table .tabulator-header .tabulator-col, 
-#schema .tabulator-header .tabulator-col, 
+#table .tabulator-header .tabulator-col,
+#schema .tabulator-header .tabulator-col,
 #metadata .tabulator-header .tabulator-col,
-#table-queryTab .tabulator-header .tabulator-col{
-    background-color:#080808;
+#table-queryTab .tabulator-header .tabulator-col {
+    background-color: #080808;
     color: #d4d4d4;
 }
 
-#table .tabulator-row, 
-#schema .tabulator-row, 
+#table .tabulator-row,
+#schema .tabulator-row,
 #metadata .tabulator-row,
-#table-queryTab .tabulator-row{
+#table-queryTab .tabulator-row {
     color: #d4d4d4;
 }
 
-#table .tabulator-row-odd, 
-#schema .tabulator-row-odd, 
+#table .tabulator-row-odd,
+#schema .tabulator-row-odd,
 #metadata .tabulator-row-odd,
-#table-queryTab .tabulator-row-odd{
+#table-queryTab .tabulator-row-odd {
     background-color: #151515;
 }
 
-#table .tabulator-row-even, 
-#schema .tabulator-row-even, 
+#table .tabulator-row-even,
+#schema .tabulator-row-even,
 #metadata .tabulator-row-even,
 #table-queryTab .tabulator-row-even {
     background-color: #202020;
 }
 
-#table .tabulator-footer *, 
-#schema .tabulator-footer *, 
+#table .tabulator-footer *,
+#schema .tabulator-footer *,
 #metadata .tabulator-footer *,
-#table-queryTab .tabulator-footer *{
+#table-queryTab .tabulator-footer * {
     background-color: #101010;
     color: #d4d4d4;
 }
@@ -40,7 +40,7 @@
     color: #d4d4d4;
 }
 
-.tabulator-popup.tabulator-popup-container{
+.tabulator-popup.tabulator-popup-container {
     background-color: #101010;
     color: #d4d4d4;
 }
@@ -50,19 +50,18 @@
 }
 
 .tabulator-menu.tabulator-popup-container .tabulator-menu-item:hover {
-    background: rgba(255, 255, 255, 0.2) !important; 
+    background: rgba(255, 255, 255, 0.2) !important;
 }
 
 #table ::-webkit-scrollbar-thumb:hover,
 #table-queryTab ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(172, 172, 172, 1)
+    background-color: rgba(172, 172, 172, 1);
 }
 
 #table ::-webkit-scrollbar-thumb,
 #table-queryTab ::-webkit-scrollbar-thumb {
     background-color: rgba(60, 60, 60, 0.4);
 }
-
 
 .flex-button {
     background-color: #101010;
@@ -74,17 +73,15 @@
     border: 1px solid #ccc;
 }
 
-.search-icon circle, 
+.search-icon circle,
 .search-icon path {
     fill: none; /* Ensure no fill on path */
     stroke: #ffffff; /* Set stroke color to white */
 }
 
-
 .search-box {
     color: white;
 }
-
 
 .clear-icon {
     width: 13px;

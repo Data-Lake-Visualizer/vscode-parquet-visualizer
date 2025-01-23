@@ -49,6 +49,10 @@ jobs:
         name: Install dependencies (without binaries)
         run: npm ci
 
+      - name: Run prettier
+        run: |-
+          npx prettier . --check --config .prettierrc
+
       - run: npx semantic-release --extends ./package.release.config.js
         env:
           VSCE_TARGET: ${{ matrix.target }}
