@@ -757,7 +757,8 @@ export class TabularDocumentEditorProvider
             }
 
             try {
-                const queryResult = await document.queryTabWorker.query(queryMessage)
+                const queryResult =
+                    await document.queryTabWorker.query(queryMessage)
                 queryTabQueryData.result = queryResult.result
                 queryTabQueryData.headers = queryResult.headers
                 queryTabQueryData.schema = queryResult.schema
