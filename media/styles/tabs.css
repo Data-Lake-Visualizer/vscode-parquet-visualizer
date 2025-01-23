@@ -4,7 +4,7 @@
     flex-direction: column;
 }
 
-input[type="radio"] {
+input[type='radio'] {
     margin: 5px 0; /* Provides spacing for the radio buttons, adjust as needed */
 }
 
@@ -19,17 +19,17 @@ input[type="radio"] {
     display: block;
 }
 
-.tab-frame .tab-buttons input{ 
-    display:none;
+.tab-frame .tab-buttons input {
+    display: none;
 }
-.tab-frame .tab-buttons > label{ 
-    display:block; 
-    float:left;
-    padding:5px 10px; 
-    cursor:pointer;
+.tab-frame .tab-buttons > label {
+    display: block;
+    float: left;
+    padding: 5px 10px;
+    cursor: pointer;
 }
-.tab-frame .tab-buttons div.tab{ 
-    display:none; 
-    padding:5px 10px;
-    clear:left
+.tab-frame .tab-buttons div.tab {
+    display: none;
+    padding: 5px 10px;
+    clear: left;
 }

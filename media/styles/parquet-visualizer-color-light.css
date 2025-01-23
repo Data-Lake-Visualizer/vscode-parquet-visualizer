@@ -1,56 +1,52 @@
-.tabulator-tableholder {
-    /* background-color: #ffffff; */
-}
-
-#table .tabulator-header .tabulator-col, 
-#schema .tabulator-header .tabulator-col, 
+#table .tabulator-header .tabulator-col,
+#schema .tabulator-header .tabulator-col,
 #metadata .tabulator-header .tabulator-col,
-#table-queryTab .tabulator-header .tabulator-col{
+#table-queryTab .tabulator-header .tabulator-col {
     background-color: var(--vscode-tab-inactiveBackground);
     color: #333333;
 }
 
-#table .tabulator-row, 
-#schema .tabulator-row, 
+#table .tabulator-row,
+#schema .tabulator-row,
 #metadata .tabulator-row,
-#table-queryTab .tabulator-row{
-    color: #242424
+#table-queryTab .tabulator-row {
+    color: #242424;
 }
 
-#table .tabulator-row-odd, 
-#schema .tabulator-row-odd, 
+#table .tabulator-row-odd,
+#schema .tabulator-row-odd,
 #metadata .tabulator-row-odd,
-#table-queryTab .tabulator-row-odd{
+#table-queryTab .tabulator-row-odd {
     background-color: var(--vscode-list-activeSelectionBackground);
 }
 
-#table .tabulator-row-even, 
-#schema .tabulator-row-even, 
+#table .tabulator-row-even,
+#schema .tabulator-row-even,
 #metadata .tabulator-row-even,
 #table-queryTab .tabulator-row-even {
     background-color: rgb(248, 248, 248);
 }
 
-#table .tabulator-footer *, 
-#schema .tabulator-footer *, 
+#table .tabulator-footer *,
+#schema .tabulator-footer *,
 #metadata .tabulator-footer *,
-#table-queryTab .tabulator-footer *{
+#table-queryTab .tabulator-footer * {
     background-color: var(--vscode-tab-inactiveBackground);
     color: #242424;
 }
 
-#table .tabulator-footer .tabulator-page, 
-#schema .tabulator-footer .tabulator-page, 
+#table .tabulator-footer .tabulator-page,
+#schema .tabulator-footer .tabulator-page,
 #metadata .tabulator-footer .tabulator-page,
-#table-queryTab .tabulator-footer .tabulator-page{
+#table-queryTab .tabulator-footer .tabulator-page {
     background-color: white;
     color: #242424;
 }
 
-#table .tabulator-footer .tabulator-page-size, 
-#schema .tabulator-footer .tabulator-page-size, 
+#table .tabulator-footer .tabulator-page-size,
+#schema .tabulator-footer .tabulator-page-size,
 #metadata .tabulator-footer .tabulator-page-size,
-#table-queryTab .tabulator-footer .tabulator-page-size{
+#table-queryTab .tabulator-footer .tabulator-page-size {
     background-color: white;
     color: #242424;
 }
@@ -60,14 +56,14 @@
     color: #242424;
 }
 
-.tabulator-popup.tabulator-popup-container{
+.tabulator-popup.tabulator-popup-container {
     background-color: #ffffff;
     color: #242424;
 }
 
 #table ::-webkit-scrollbar-thumb:hover,
 #table-queryTab ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(172, 172, 172, 1)
+    background-color: rgba(172, 172, 172, 1);
 }
 
 #table ::-webkit-scrollbar-thumb,
@@ -75,13 +71,10 @@
     background-color: rgba(60, 60, 60, 0.4);
 }
 
-
 .flex-button {
     background-color: #ffffff;
-    color: #242424;;
+    color: #242424;
 }
-
-
 
 /* Search container */
 .search-container {
@@ -92,30 +85,27 @@
     margin-right: 10px;
 }
 
-#table-queryTab .search-container,  
-#table-queryTab .search-container *{
+#table-queryTab .search-container,
+#table-queryTab .search-container * {
     background-color: white;
 }
-
 
 #table-queryTab .search-icon {
     background-color: white;
 }
 
-.search-icon circle, 
+.search-icon circle,
 .search-icon path {
     fill: none; /* Ensure no fill on path */
     stroke: #000000; /* Set stroke color to white */
 }
 
-
 .search-box {
     color: black;
 }
 
-
 .clear-icon path {
-    fill: none; 
+    fill: none;
     stroke: #000000;
 }
 
@@ -150,8 +140,7 @@
 
 .dropdown-icon path,
 .export-icon path,
-.export-icon rect
- {
-    fill: none; 
+.export-icon rect {
+    fill: none;
     stroke: #000000;
 }

@@ -4,7 +4,25 @@ name: ci
 on: push
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.15.0
+
+      - name: Install dependencies (without binaries)
+        run: npm ci
+
+      - name: Run prettier
+        run: |-
+          npx prettier . --check --config .prettierrc
+
   build:
+    needs: lint
     strategy:
       matrix:
         include:
@@ -56,7 +74,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           AZURE_APP_INSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
           path: '*.vsix'
@@ -74,7 +92,7 @@ jobs:
 
       - run: npm ci
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
 
       - run: npx semantic-release --extends ./publish.release.config.js
         env:

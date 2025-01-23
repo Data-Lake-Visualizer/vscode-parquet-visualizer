@@ -1,10 +1,11 @@
-html, body {
+html,
+body {
     height: 100%; /* Ensures that the body takes the full height of the viewport */
-    margin: 0;    /* Removes default margin */
-    padding: 0;   /* Removes default padding */
+    margin: 0; /* Removes default margin */
+    padding: 0; /* Removes default padding */
     font-size: var(--vscode-font-size);
-	font-weight: var(--vscode-font-weight);
-	font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    font-family: var(--vscode-font-family);
 }
 
 #container {
@@ -13,8 +14,9 @@ html, body {
     flex-direction: column; /* Aligns children vertically */
 }
 
-
-#table, #schema, #metadata {
+#table,
+#schema,
+#metadata {
     height: 100%;
 }
 
@@ -26,7 +28,7 @@ html, body {
 
 #editor {
     height: 25%;
-    resize: vertical; 
+    resize: vertical;
     overflow: auto;
     box-sizing: border-box;
 }
@@ -40,12 +42,14 @@ html, body {
 
 #table-queryTab {
     flex: 1; /* Fills remaining space */
-    max-height: calc(100vh - 20% - 40px); /* Ensures it won't overflow the viewport */
+    max-height: calc(
+        100vh - 20% - 40px
+    ); /* Ensures it won't overflow the viewport */
     overflow: hidden; /* Allows scrolling inside if content overflows */
     box-sizing: border-box;
 }
 
-@media (max-width: 1024px) and (min-width: 769px)  {
+@media (max-width: 1024px) and (min-width: 769px) {
     #editor {
         height: 25%;
     }
@@ -134,7 +138,7 @@ html, body {
 }
 
 .flex-button:disabled {
-    opacity: .5;
+    opacity: 0.5;
 }
 
 /* Search container */
@@ -158,7 +162,7 @@ html, body {
     height: 13px;
 }
 
-.search-icon circle, 
+.search-icon circle,
 .search-icon path {
     fill: none; /* Ensure no fill on path */
     stroke: #ffffff; /* Set stroke color to white */
@@ -173,7 +177,7 @@ html, body {
 
 /* Additional CSS to ensure no border or outline on focus */
 .search-box:focus {
-    border: none;  /* Ensures no border on focus */
+    border: none; /* Ensures no border on focus */
     outline: none; /* Ensures no outline on focus */
 }
 
@@ -192,7 +196,7 @@ html, body {
     height: 13px;
 }
 
-.clear-icon path{
+.clear-icon path {
     fill: none;
     stroke: #ffffff; /* Set stroke color to white */
 }
@@ -228,7 +232,7 @@ html, body {
     display: none;
     position: absolute;
     min-width: 80px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     list-style-type: none;
     padding: 0;
@@ -243,16 +247,16 @@ html, body {
 .dropdown-menu li {
     margin: 0 2px;
     padding: 2px 5px;
-    border-left: 0.5px solid  #aaa;
-    border-right: 0.5px solid  #aaa;
+    border-left: 0.5px solid #aaa;
+    border-right: 0.5px solid #aaa;
 }
 
 .dropdown-menu li:last-child {
     margin: 0 2px;
     padding: 2px 5px;
-    border-left: 0.5px solid  #aaa;
-    border-right: 0.5px solid  #aaa;
-    border-bottom: 0.5px solid  #aaa;
+    border-left: 0.5px solid #aaa;
+    border-right: 0.5px solid #aaa;
+    border-bottom: 0.5px solid #aaa;
 }
 
 .dropdown-menu li span {

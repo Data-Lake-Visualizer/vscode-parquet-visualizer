@@ -1,5 +1,5 @@
-.tab-frame .tab-buttons input:checked + label{ 
+.tab-frame .tab-buttons input:checked + label {
     background: var(--vscode-list-activeSelectionBackground);
-    color:black; 
-    cursor:default;
+    color: black;
+    cursor: default;
 }
