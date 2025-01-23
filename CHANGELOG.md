@@ -1,3 +1,10 @@
+## [0.23.2](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.1...v0.23.2) (2025-01-23)
+
+
+### Bug Fixes
+
+* return duckdb schema on startup for query tab ([8157365](https://github.com/luusluus/vscode-parquet-visualizer/commit/815736579b0b1f0a2e0bc91d101408a7488be438))
+
 ## [0.23.1](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.0...v0.23.1) (2025-01-22)
 
 
