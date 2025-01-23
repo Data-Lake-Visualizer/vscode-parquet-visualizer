@@ -22,6 +22,7 @@ jobs:
           npx prettier . --check --config .prettierrc
 
   build:
+    needs: lint
     strategy:
       matrix:
         include:
