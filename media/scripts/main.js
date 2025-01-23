@@ -160,22 +160,22 @@
 
     function onPopupOpenedQueryResultTab(component) {
         const parentContainerId = 'table-queryTab'
-        onPopupOpened(parentContainerId)
+        onPopupOpened(parentContainerId, component)
     }
 
     function onPopupOpenedDataTab(component) {
         const parentContainerId = 'data-tab-panel'
-        onPopupOpened(parentContainerId)
+        onPopupOpened(parentContainerId, component)
     }
 
     function onPopupOpenedSchemaTab(component) {
         const parentContainerId = 'schema'
-        onPopupOpened(parentContainerId)
+        onPopupOpened(parentContainerId, component)
     }
 
     function onPopupOpenedMetaDataTab(component) {
         const parentContainerId = 'metadata'
-        onPopupOpened(parentContainerId)
+        onPopupOpened(parentContainerId, component)
     }
 
     function containsHTML(str) {
@@ -192,10 +192,13 @@
             .replace(/'/g, '&#039;')
     }
 
-    function onPopupOpened(parentContainerId) {
-        const element = document.getElementsByClassName(
+    function onPopupOpened(parentContainerId, component) {
+        let element = document.getElementsByClassName(
             'tabulator-popup tabulator-popup-container'
         )[0]
+
+        const cellValue = component.getValue()
+
         let innerHTML = element.innerHTML
         let style = element.style
 
@@ -220,6 +223,7 @@
                 tab: tab,
             })
         } else {
+            innerHTML = cellValue
             if (containsHTML(innerHTML)) {
                 element.innerHTML = escapeHtml(innerHTML)
             }
