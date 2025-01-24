@@ -1,3 +1,10 @@
+## [0.23.4](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.3...v0.23.4) (2025-01-24)
+
+
+### Bug Fixes
+
+* show schema data in schema tab ([199c684](https://github.com/luusluus/vscode-parquet-visualizer/commit/199c68447b0b20a6f05d3223e9b9c052e37d9624))
+
 ## [0.23.3](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.2...v0.23.3) (2025-01-23)
 
 
