@@ -1236,7 +1236,7 @@
                         tableData.headers,
                         tableData.totalPageCount
                     )
-                    initSchema(tableData.schema)
+                    initSchema(tableData.schemaTabData)
                     initMetaData(tableData.metaData)
                     if (tableData.isQueryAble) {
                         initCodeEditor(

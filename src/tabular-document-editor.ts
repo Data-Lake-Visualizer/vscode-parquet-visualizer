@@ -790,6 +790,7 @@ export class TabularDocumentEditorProvider
         const data = {
             headers: queryTabQueryData.headers,
             schema: queryTabQueryData.schema,
+            schemaTabData: schema,
             metaData: metadata,
             rawData: queryTabQueryData.result,
             rowCount: queryTabQueryData.rowCount,
