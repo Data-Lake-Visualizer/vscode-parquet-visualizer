@@ -10,3 +10,5 @@ data/.vscode
 
 data/parquet/*.parquet
 data/csv/*.csv
+
+logs
