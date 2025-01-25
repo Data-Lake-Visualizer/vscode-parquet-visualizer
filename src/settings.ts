@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 import { LogLevel } from '@vscode-logging/logger'
-import { CSV_NAME_EXTENSION } from './constants'
+import { EXTENSION_NAME } from './constants'
 
 function settings(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration(CSV_NAME_EXTENSION)
+    return vscode.workspace.getConfiguration(EXTENSION_NAME)
 }
 
 export function defaultPageSizes(): string[] {
@@ -102,7 +102,7 @@ function settingsChanged(
     sections: string[]
 ): boolean {
     return sections
-        .map((s) => `${name}.${s}`)
+        .map((s) => `${EXTENSION_NAME}.${s}`)
         .some((s) => e.affectsConfiguration(s))
 }
 
