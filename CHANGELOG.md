@@ -1,3 +1,10 @@
+## [0.24.1](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.24.0...v0.24.1) (2025-01-25)
+
+
+### Bug Fixes
+
+* fix settings bug ([c14b039](https://github.com/luusluus/vscode-parquet-visualizer/commit/c14b039b46801d9ca4dd186a38e506bc06515c18))
+
 # [0.24.0](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.6...v0.24.0) (2025-01-25)
 
 
