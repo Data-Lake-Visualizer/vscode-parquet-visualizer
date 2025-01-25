@@ -1,3 +1,10 @@
+# [0.24.0](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.6...v0.24.0) (2025-01-25)
+
+
+### Features
+
+* improve logging ([cc9226d](https://github.com/luusluus/vscode-parquet-visualizer/commit/cc9226d670b913d16c5849b12bd867f376907b96))
+
 ## [0.23.6](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.5...v0.23.6) (2025-01-25)
 
 
