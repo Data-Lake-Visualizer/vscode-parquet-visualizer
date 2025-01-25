@@ -1,3 +1,10 @@
+## [0.23.5](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.4...v0.23.5) (2025-01-25)
+
+
+### Bug Fixes
+
+* improve ux of using columns with quotes a bit ([fe6f046](https://github.com/luusluus/vscode-parquet-visualizer/commit/fe6f04608618e01b158a81140c4f264e86bb94c8))
+
 ## [0.23.4](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.3...v0.23.4) (2025-01-24)
 
 
