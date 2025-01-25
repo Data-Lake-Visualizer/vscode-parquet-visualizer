@@ -88,10 +88,28 @@
                     "markdownDescription": "Outputs the datetime format for timestamp columns in UTC or in local time.",
                     "default": true
                 },
-                "parquet-visualizer.runQueryOnStartup": {
+                "parquet-visualizer.logging.panel": {
                     "type": "boolean",
-                    "markdownDescription": "Runs the query automatically at startup.",
-                    "default": true
+                    "markdownDescription": "Write diagnostic logs to an output panel.",
+                    "default": false
+                },
+                "parquet-visualizer.logging.folder": {
+                    "type": "string",
+                    "markdownDescription": "Write diagnostic logs under the given directory."
+                },
+                "parquet-visualizer.logging.level": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "fatal",
+                        "error",
+                        "warn",
+                        "info",
+                        "debug",
+                        "trace"
+                    ],
+                    "default": "info",
+                    "markdownDescription": "Log level."
                 }
             }
         },
@@ -148,6 +166,8 @@
         "typescript": "^5.1.3"
     },
     "dependencies": {
+        "@vscode-logging/logger": "^2.0.0",
+        "@vscode-logging/wrapper": "^2.0.0",
         "@vscode/extension-telemetry": "^0.9.7",
         "apache-arrow": "^15.0.0",
         "comlink": "^4.4.2",

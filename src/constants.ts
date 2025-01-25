@@ -1,3 +1,5 @@
+export const EXTENSION_NAME = 'parquet-visualizer'
+
 export const FILENAME_SHORTNAME_FULLNAME_MAPPING: Record<string, string> = {
     csv: 'Comma Separated Values file',
     json: 'JavaScript Object Notation file',
