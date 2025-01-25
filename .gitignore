@@ -1,6 +1,7 @@
 out
 dist
 node_modules
+.vscode/settings.json
 .vscode-test/
 *.vsix
 .idea
@@ -9,3 +10,5 @@ data/.vscode
 
 data/parquet/*.parquet
 data/csv/*.csv
+
+logs
