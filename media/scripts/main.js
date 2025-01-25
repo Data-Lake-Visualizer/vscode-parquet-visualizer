@@ -535,7 +535,38 @@
 
         const completer = {
             getCompletions: function (editor, session, pos, prefix, callback) {
-                callback(null, aceEditorCompletions)
+                const line = session.getLine(pos.row);
+                const charBeforeCursor = line[pos.column - 1] || "";
+
+                // Get the character immediately after the cursor
+                const charAfterCursor = line[pos.column] || "";
+
+                const aceEditorCompletionsCopy = structuredClone(aceEditorCompletions)
+                aceEditorCompletionsCopy.forEach(c => {
+                    if (charBeforeCursor === '"' && charAfterCursor === '"') {
+                        // If the cursor is between a pair of quotes, offer relevant suggestions
+                        c.value = c.value.replace(/['"]/g, "")
+                    } else if (charBeforeCursor === '"') {
+                        // If the cursor is right after an opening quote
+
+                        if (c.value.includes('"')) {
+                            c.value = c.value.replace(/^"/, "")
+                        } else {
+                            c.value = c.value + '"';
+                        }
+
+                    } else if (charAfterCursor === '"') {
+                        // If the cursor is right after an opening quote
+                        if (c.value.includes('"')) {
+                            c.value = c.value.replace(/"$/, "")
+                        } else {
+                            c.value = '"' + c.value;
+                        }
+                    }
+                    
+                })
+
+                callback(null, aceEditorCompletionsCopy)
             },
         }
 
