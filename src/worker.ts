@@ -125,12 +125,12 @@ class QueryHelper {
 
         const searchString = message.query.searchString
         if (searchString && searchString !== '') {
-            const schema = this.backend.arrowSchema
-            const whereClause = schema.fields
+            const querySchemaResult = await this.backend.query(`DESCRIBE ${query}`)
+            const whereClause = querySchemaResult
                 .map((col) =>
-                    col.typeId === Type.Utf8 || col.typeId === Type.LargeUtf8
-                        ? `"${col.name}" LIKE '%${searchString}%'`
-                        : `CAST("${col.name}" AS TEXT) LIKE '%${searchString}%'`
+                    col.column_type === "VARCHAR"
+                        ? `"${col.column_name}" LIKE '%${searchString}%'`
+                        : `CAST("${col.column_name}" AS TEXT) LIKE '%${searchString}%'`
                 )
                 .join(' OR ')
 
