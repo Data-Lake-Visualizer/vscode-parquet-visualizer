@@ -1,15 +1,16 @@
 import * as vscode from 'vscode'
-
-const name = 'parquet-visualizer'
+import { LogLevel } from '@vscode-logging/logger'
+import { CSV_NAME_EXTENSION } from './constants'
 
 function settings(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration(name)
+    return vscode.workspace.getConfiguration(CSV_NAME_EXTENSION)
 }
 
 export function defaultPageSizes(): string[] {
     const defaultPageSizes = settings().get('defaultPageSizes') as string[]
     const defaultDefaultPageSizes = ['20', '50', '100', '500', 'all']
-    if (defaultPageSizes.length === 0) {
+
+    if (!defaultPageSizes || defaultPageSizes.length === 0) {
         console.warn(
             `setting parquet-visualizer.defaultPageSizes is set to empty array. Defaulting to ["20","50","100","500","all"]`
         )
@@ -37,7 +38,9 @@ export function defaultQuery(): string {
 }
 
 export function defaultBackend(): string {
-    return settings().get('backend') as string
+    const backend = settings().get('backend') as string
+    if (!backend) return 'duckdb'
+    return backend
 }
 
 export function defaultRunQueryKeyBinding(): string {
@@ -63,11 +66,35 @@ export function dateTimeFormat(): string {
 }
 
 export function outputDateTimeFormatInUTC(): boolean {
-    return settings().get<boolean>('outputDateTimeFormatInUTC') as boolean
+    const outputDateTimeFormatInUTC = settings().get<boolean>(
+        'outputDateTimeFormatInUTC'
+    ) as boolean
+    if (!outputDateTimeFormatInUTC) return true
+    return outputDateTimeFormatInUTC
 }
 
 export function runQueryOnStartup(): boolean {
-    return settings().get<boolean>('runQueryOnStartup') as boolean
+    const runQueryOnStartup = settings().get<boolean>(
+        'runQueryOnStartup'
+    ) as boolean
+    if (!runQueryOnStartup) return true
+    return runQueryOnStartup
+}
+
+export function logPanel(): boolean {
+    const logPanel = settings().get<boolean>('logging.panel') as boolean
+    if (!logPanel) return false
+    return logPanel
+}
+
+export function logFolder(): string {
+    return settings().get<string>('logging.folder') as string
+}
+
+export function logLevel(): LogLevel {
+    const logLevel = settings().get<LogLevel>('logging.level') as LogLevel
+    if (!logLevel) return 'info'
+    return logLevel
 }
 
 function settingsChanged(

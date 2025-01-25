@@ -27,7 +27,7 @@ import {
 import { DateTimeFormatSettings, SerializeableUri } from './types'
 
 import { TelemetryManager } from './telemetry'
-// import { getLogger } from './logger';
+import { getLogger } from './logger'
 
 import * as constants from './constants'
 
@@ -43,6 +43,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     static async create(
         uri: vscode.Uri
     ): Promise<CustomDocument | PromiseLike<CustomDocument>> {
+        getLogger().debug(`CustomDocument.create(${uri})`)
+
         const dateTimeFormatSettings: DateTimeFormatSettings = {
             format: dateTimeFormat(),
             useUTC: outputDateTimeFormatInUTC(),
@@ -59,6 +61,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     const totalItems = backend.getRowCount()
 
                     const columnCount = backend.arrowSchema.fields.length
+                    getLogger().info(`File opened with DuckDB`)
                     TelemetryManager.sendEvent('fileOpened', {
                         backend: 'duckdb',
                         numRows: totalItems.toString(),
@@ -74,6 +77,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     )
 
                     const columnCount = backend.arrowSchema.fields.length
+                    getLogger().info(`File opened with parquet-wasm`)
                     TelemetryManager.sendEvent('fileOpened', {
                         backend: 'parquet-wasm',
                         numRows: backend.getRowCount().toString(),
@@ -84,6 +88,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 }
                 default:
                     const errorMessage = 'Unknown backend. Terminating'
+                    getLogger().error(errorMessage)
                     vscode.window.showErrorMessage(errorMessage)
                     throw Error(errorMessage)
             }
@@ -93,6 +98,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error'
             const stackTrace = err instanceof Error ? err.stack : undefined
+
+            getLogger().error(errorMessage)
+            getLogger().error(stackTrace || 'No stack trace available')
+
             TelemetryManager.sendEvent('fileParsingResult', {
                 result: 'Failure',
                 uri: uri.toJSON(),
@@ -114,6 +123,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 return new CustomDocument(uri, backend)
             }
 
+            getLogger().error(error.message)
             vscode.window.showErrorMessage(error.message)
             throw Error(error.message)
         }
@@ -137,6 +147,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 )
             }
         } catch (e: unknown) {
+            getLogger().error(e as string)
             console.error(e)
         }
     }
@@ -145,6 +156,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         super()
         this.uri = uri
         this.backend = backend
+
+        getLogger().debug(`CustomDocument.ctor()`)
 
         // FIXME: Check if backend is of type ParquetWasm
         if (this.backend instanceof DuckDBBackend) {
@@ -361,6 +374,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             console.error(e)
             const error = e as DuckDbError
             this.fireErrorEvent(error.message)
+            getLogger().error(error.message)
             vscode.window.showErrorMessage(error.message)
         }
     }
@@ -475,6 +489,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             console.error(e)
             const error = e as DuckDbError
             const errorMessage = `Export failed: ${error.message}`
+            getLogger().error(error.message)
             vscode.window.showErrorMessage(errorMessage)
             this.fireErrorEvent(errorMessage)
         }
@@ -490,6 +505,8 @@ export class TabularDocumentEditorProvider
     public static register(
         context: vscode.ExtensionContext
     ): vscode.Disposable {
+        getLogger().debug(`TabularDocumentEditorProvider.register()`)
+
         const provider = new TabularDocumentEditorProvider(context)
         return vscode.window.registerCustomEditorProvider(
             TabularDocumentEditorProvider.viewType,
@@ -522,6 +539,9 @@ export class TabularDocumentEditorProvider
     }
 
     async openCustomDocument(uri: vscode.Uri): Promise<CustomDocument> {
+        getLogger().debug(
+            `TabularDocumentEditorProvider.openCustomDocument(${uri})`
+        )
         // console.log(`openCustomDocument(uri: ${uri})`);
         const document: CustomDocument = await CustomDocument.create(uri)
 
@@ -718,6 +738,7 @@ export class TabularDocumentEditorProvider
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
+        getLogger().debug(`TabularDocumentEditorProvider.resolveCustomEditor()`)
         // console.log(`resolveCustomEditor(${document.uri})`);
         this.webviews.add(document.uri, webviewPanel)
 
@@ -747,7 +768,12 @@ export class TabularDocumentEditorProvider
             rowCount: 0,
             pageCount: 0,
         }
-        if (runQueryOnStartup()) {
+
+        const isRunQueryOnStartup = runQueryOnStartup()
+        if (isRunQueryOnStartup) {
+            getLogger().info(
+                `TabularDocumentEditorProvider runQueryOnStartup: ${isRunQueryOnStartup}`
+            )
             const queryMessage = {
                 source: 'query',
                 query: {
@@ -768,6 +794,7 @@ export class TabularDocumentEditorProvider
                 console.error(e)
                 const error = e as DuckDbError
                 this.dispose()
+                getLogger().error(error.message)
                 vscode.window.showErrorMessage(error.message)
                 throw Error(error.message)
             }
@@ -818,6 +845,9 @@ export class TabularDocumentEditorProvider
                         tableData: data,
                     })
                 } else {
+                    getLogger().debug(
+                        `TabularDocumentEditorProvider send initial query Result`
+                    )
                     this.postMessage(webviewPanel, 'init', {
                         tableData: data,
                     })
@@ -834,6 +864,9 @@ export class TabularDocumentEditorProvider
                     document.dataTabWorker
                         .query(queryMessage)
                         .then((result) => {
+                            getLogger().debug(
+                                `TabularDocumentEditorProvider resolve data tab data`
+                            )
                             document.fireChangedDocumentEvent(
                                 result.result,
                                 result.headers,
@@ -844,6 +877,12 @@ export class TabularDocumentEditorProvider
                                 result.pageNumber,
                                 totalPageCount
                             )
+                        })
+                        .catch((e) => {
+                            getLogger().error(
+                                `TabularDocumentEditorProvider failed to get data tab data`
+                            )
+                            getLogger().error(e)
                         })
                 }
             }
