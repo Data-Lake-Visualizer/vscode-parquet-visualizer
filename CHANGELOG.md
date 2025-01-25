@@ -1,3 +1,10 @@
+## [0.23.6](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.5...v0.23.6) (2025-01-25)
+
+
+### Bug Fixes
+
+* get the schema of query result, not the file ([a632e89](https://github.com/luusluus/vscode-parquet-visualizer/commit/a632e8907a1cbaa965bed8fe8a98f254c4aa4242))
+
 ## [0.23.5](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.23.4...v0.23.5) (2025-01-25)
 
 
