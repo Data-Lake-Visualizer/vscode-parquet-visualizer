@@ -1,3 +1,15 @@
+# [0.25.0](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.24.1...v0.25.0) (2025-01-26)
+
+
+### Bug Fixes
+
+* properly exit data tab worker at closing document ([037f58c](https://github.com/luusluus/vscode-parquet-visualizer/commit/037f58ce630c1bbf6b174da46aeb13b00720359f))
+
+
+### Features
+
+* move run and clear button to top ([ddb45fb](https://github.com/luusluus/vscode-parquet-visualizer/commit/ddb45fb9823b9b6d3155da08fa421f282bce3d9e))
+
 ## [0.24.1](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.24.0...v0.24.1) (2025-01-25)
 
 
