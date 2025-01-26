@@ -287,7 +287,7 @@
 
         const runQueryButton = document.getElementById('run-query-btn')
         runQueryButton?.removeAttribute('disabled')
-        
+
         const runQueryButtonText = document.getElementById('run-query-btn-text')
         runQueryButtonText.innerText = 'Run'
         resultsTable.clearAlert()
