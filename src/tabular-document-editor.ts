@@ -290,6 +290,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         if (this.backend instanceof DuckDBBackend) {
             this.queryTabWorker.exit()
+            this.dataTabWorker.exit()
         }
 
         super.dispose()
