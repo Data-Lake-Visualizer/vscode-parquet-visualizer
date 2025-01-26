@@ -1,17 +1,17 @@
 {
     "name": "parquet-visualizer",
     "displayName": "Parquet Visualizer",
-    "description": "Inspect and query very large parquet files fast and easy",
+    "description": "Inspect and query very large parquet/CSV files fast and easy",
     "publisher": "lucien-martijn",
     "icon": "media/ico128.png",
-    "homepage": "https://github.com/luusluus/vscode-parquet-visualizer",
+    "homepage": "https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer",
     "bugs": {
-        "url": "https://github.com/luusluus/vscode-parquet-visualizer/issues",
+        "url": "https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/issues",
         "email": "lucienmartijn@gmail.com"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/luusluus/vscode-parquet-visualizer.git"
+        "url": "https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer.git"
     },
     "author": {
         "name": "Lucien Martijn",
@@ -32,6 +32,7 @@
     ],
     "keywords": [
         "parquet",
+        "csv",
         "visualizer",
         "table",
         "schema",
