@@ -287,7 +287,9 @@
 
         const runQueryButton = document.getElementById('run-query-btn')
         runQueryButton?.removeAttribute('disabled')
-        runQueryButton.innerText = 'Run'
+        
+        const runQueryButtonText = document.getElementById('run-query-btn-text')
+        runQueryButtonText.innerText = 'Run'
         resultsTable.clearAlert()
         isQueryRunning = false
     }
@@ -427,7 +429,6 @@
             footerElement: `<span class="tabulator-page-counter" id="query-count"></span>
                     <span class="tabulator-page-counter" id="page-count"></span>
                     <span class="tabulator-paginator">
-                        <button class="tabulator-page" disabled id="reset-sort-${requestSourceQueryTab}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort" style="margin-right: 10px;">Reset Sort</button>
                         <label>Page Size</label>
                         <select class="tabulator-page-size" id="dropdown-page-size-${requestSourceQueryTab}" aria-label="Page Size" title="Page Size">
                             ${options}
@@ -496,7 +497,9 @@
 
         const runQueryButton = document.getElementById('run-query-btn')
         runQueryButton.setAttribute('disabled', '')
-        runQueryButton.innerText = 'Running'
+
+        const runQueryButtonText = document.getElementById('run-query-btn-text')
+        runQueryButtonText.innerText = 'Running'
 
         const selectedOption = getSelectedPageSize(requestSourceQueryTab)
         const queryString = getTextFromEditor(editor)
