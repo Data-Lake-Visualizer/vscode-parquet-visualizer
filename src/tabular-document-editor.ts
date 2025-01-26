@@ -290,6 +290,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         if (this.backend instanceof DuckDBBackend) {
             this.queryTabWorker.exit()
+            this.dataTabWorker.exit()
         }
 
         super.dispose()
@@ -1113,13 +1114,18 @@ export class TabularDocumentEditorProvider
                 '<p>The loaded backend does not support SQL.</p>'
         } else {
             queryActionsBodyHtml = `
-              <div id="editor"></div>
               <div id="query-actions" class="button-container">
-
-                <button id="run-query-btn" class="tabulator-page flex-button">Run</button>
-                <button id="clear-query-btn" class="tabulator-page flex-button">Clear</button>
-                
-                <div class="flex-button search-container" style="margin-left: auto;">
+                    <button id="run-query-btn" class="tabulator-page flex-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+                            <polygon points="5,4 11,8 5,12" fill="none" stroke="#84CF85" stroke-width="1.5" />
+                        </svg>
+                        <span id="run-query-btn-text">Run</span>
+                    </button>
+                    <button id="clear-query-btn" class="tabulator-page flex-button">Clear</button>
+              </div>
+              <div id="editor"></div>
+              <div id="query-result-actions" class="button-container">
+                <div class="flex-button search-container" style="margin-right: auto;">
                     <div class="search-icon-element">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" class="search-icon">
                             <circle cx="7" cy="7" r="5"></circle>
@@ -1133,6 +1139,9 @@ export class TabularDocumentEditorProvider
                         </svg>
                     </div>
                 </div>
+                
+                <button class="tabulator-page flex-button" disabled id="reset-sort-queryTab" type="button" role="button" aria-label="Reset Sort" title="Reset Sort">Reset Sort</button>
+
                 <button class="tabulator-page flex-button" disabled id="copy-query-results" type="button" role="button" aria-label="Copy page to clipboard" title="Copy page to clipboard">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" width="16" height="16" class="copy-icon">
                       <path d="M2 5h9v9H2z" class="stroke-linejoin-round"></path>
@@ -1140,6 +1149,7 @@ export class TabularDocumentEditorProvider
                   </svg>
                   Copy page
                 </button>
+                
                 <div class="dropdown">
                     <button class="flex-button" disabled id="export-query-results" type="button" role="button" aria-label="Export results" title="Export results">
                       <svg class="export-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">

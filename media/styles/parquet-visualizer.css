@@ -33,7 +33,7 @@ body {
     box-sizing: border-box;
 }
 
-#query-actions {
+#query-result-actions {
     flex: 0 0 auto; /* Respects its height */
     min-height: 40px;
     max-height: 5%; /* Maximum height relative to the viewport */
@@ -54,7 +54,7 @@ body {
         height: 25%;
     }
 
-    #query-actions {
+    #query-result-actions {
         flex: 0 0 auto;
         min-height: 40px; /* Adjusted min-height */
         max-height: 6%;
@@ -70,7 +70,7 @@ body {
         height: 25%;
     }
 
-    #query-actions {
+    #query-result-actions {
         flex: 0 0 auto;
         min-height: 40px; /* Adjusted min-height */
         max-height: 6%;
@@ -145,7 +145,7 @@ body {
 
 .search-container {
     display: flex;
-    width: 40%;
+    width: 50%;
     align-items: center;
     border: 1px solid #ccc;
     padding: 3px;
