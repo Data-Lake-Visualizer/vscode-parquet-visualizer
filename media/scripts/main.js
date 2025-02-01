@@ -35,7 +35,7 @@
     let numRecordsDropDownResultTableHasChanged = false
     let numRecordsDropdownSelectedIndex = 0
 
-    let isQueryAble = false;
+    let isQueryAble = false
 
     const requestSourceDataTab = 'dataTab'
     const requestSourceQueryTab = 'queryTab'
@@ -658,7 +658,7 @@
     ) {
         let columns = headers.map((c) => ({
             ...c,
-            ...(isQueryAble && { 
+            ...(isQueryAble && {
                 sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
                     return 0
                 },
@@ -702,7 +702,7 @@
 
         dataTable.on('tableBuilt', () => {
             // console.log("data Table built")
-            if (isQueryAble){
+            if (isQueryAble) {
                 initializeSort(requestSourceDataTab)
             }
 
@@ -1285,8 +1285,7 @@
                             tableData.totalPageCount
                         )
                         document.getElementById('data-tab')?.click()
-                    }
-                    else {
+                    } else {
                         initCodeEditor(
                             tableData.settings.defaultQuery,
                             tableData.settings.shortCutMapping,

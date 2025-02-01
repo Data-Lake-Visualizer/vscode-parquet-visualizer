@@ -292,8 +292,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         if (this.backend instanceof DuckDBBackend) {
             this.queryTabWorker.exit()
             this.dataTabWorker.exit()
-        }
-        else if (this.backend instanceof ParquetWasmBackend) {
+        } else if (this.backend instanceof ParquetWasmBackend) {
             this.dataTabWorker.exit()
         }
 
@@ -743,126 +742,130 @@ export class TabularDocumentEditorProvider
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-        getLogger().debug(`TabularDocumentEditorProvider.resolveCustomEditor()`);
-        
+        getLogger().debug(`TabularDocumentEditorProvider.resolveCustomEditor()`)
+
         try {
-            this.webviews.add(document.uri, webviewPanel);
-    
+            this.webviews.add(document.uri, webviewPanel)
+
             // Setup initial content for the webview
             webviewPanel.webview.options = {
                 enableScripts: true,
-            };
-    
+            }
+
             webviewPanel.webview.html = this.getHtmlForWebview(
                 webviewPanel.webview,
                 document.isQueryAble
-            );
-    
+            )
+
             webviewPanel.webview.onDidReceiveMessage((e) =>
                 this.onMessage(document, e)
-            );
-    
+            )
+
             getLogger().debug(
                 `TabularDocumentEditorProvider - get setting defaultPageSizes()`
-            );
-            const defaultPageSizesFromSettings = defaultPageSizes();
-            const firstPageSize = defaultPageSizesFromSettings[0];
-            const pageSize = Number(firstPageSize);
+            )
+            const defaultPageSizesFromSettings = defaultPageSizes()
+            const firstPageSize = defaultPageSizesFromSettings[0]
+            const pageSize = Number(firstPageSize)
 
             getLogger().debug(
                 `TabularDocumentEditorProvider - get setting defaultQuery()`
-            );
-            const defaultQueryFromSettings = defaultQuery();
-    
+            )
+            const defaultQueryFromSettings = defaultQuery()
+
             let tableData = {
                 result: [] as any[],
                 headers: [] as any[],
                 schema: [] as any,
                 rowCount: 0,
                 pageCount: 0,
-            };
-    
+            }
+
             try {
-                const isRunQueryOnStartup = runQueryOnStartup();
+                const isRunQueryOnStartup = runQueryOnStartup()
                 if (isRunQueryOnStartup && document.isQueryAble) {
                     getLogger().debug(
                         `TabularDocumentEditorProvider - runQueryOnStartup ${isRunQueryOnStartup}`
-                    );
-    
+                    )
+
                     const queryMessage = {
                         source: 'query',
                         query: {
                             queryString: defaultQueryFromSettings,
                             pageSize: pageSize,
                         },
-                    };
-    
-                    getLogger().debug(
-                        `TabularDocumentEditorProvider - queryTabWorker.query()`
-                    );
-                    const result =
-                        await document.queryTabWorker.query(queryMessage);
-    
-                        tableData = {
-                        result: result.result,
-                        headers: result.headers,
-                        schema: result.schema,
-                        rowCount: result.rowCount,
-                        pageCount: result.pageCount,
-                    };
-                } else {
-                    const queryMessage = {
-                        query: {
-                            queryString: defaultQueryFromSettings,
-                            pageSize: pageSize,
-                        },
-                    };
+                    }
 
                     getLogger().debug(
-                        `TabularDocumentEditorProvider - dataTabWorker.query()`
-                    );
-                    
-                    const result = await document.dataTabWorker.query(queryMessage);
+                        `TabularDocumentEditorProvider - queryTabWorker.query()`
+                    )
+                    const result =
+                        await document.queryTabWorker.query(queryMessage)
+
                     tableData = {
                         result: result.result,
                         headers: result.headers,
                         schema: result.schema,
                         rowCount: result.rowCount,
                         pageCount: result.pageCount,
-                    };
+                    }
+                } else {
+                    const queryMessage = {
+                        query: {
+                            queryString: defaultQueryFromSettings,
+                            pageSize: pageSize,
+                        },
+                    }
 
+                    getLogger().debug(
+                        `TabularDocumentEditorProvider - dataTabWorker.query()`
+                    )
+
+                    const result =
+                        await document.dataTabWorker.query(queryMessage)
+                    tableData = {
+                        result: result.result,
+                        headers: result.headers,
+                        schema: result.schema,
+                        rowCount: result.rowCount,
+                        pageCount: result.pageCount,
+                    }
                 }
             } catch (error) {
-                getLogger().error("Error executing startup query", error);
-                vscode.window.showErrorMessage("Failed to run the initial query.");
+                getLogger().error('Error executing startup query', error)
+                vscode.window.showErrorMessage(
+                    'Failed to run the initial query.'
+                )
             }
-        
-            let schema, metadata;
-            let totalRowCount: number;
-            let totalPageCount: number;
+
+            let schema, metadata
+            let totalRowCount: number
+            let totalPageCount: number
             try {
-                totalRowCount = document.backend.getRowCount();
-                totalPageCount = Math.ceil(totalRowCount / pageSize);
-    
-                getLogger().debug("TabularDocumentEditorProvider - getSchema()");
-                schema = document.backend.getSchema();
-    
-                getLogger().debug("TabularDocumentEditorProvider getMetaData()");
-                metadata = document.backend.getMetaData();
+                totalRowCount = document.backend.getRowCount()
+                totalPageCount = Math.ceil(totalRowCount / pageSize)
+
+                getLogger().debug('TabularDocumentEditorProvider - getSchema()')
+                schema = document.backend.getSchema()
+
+                getLogger().debug('TabularDocumentEditorProvider getMetaData()')
+                metadata = document.backend.getMetaData()
             } catch (error) {
-                getLogger().error("Error retrieving schema or metadata", error);
-                vscode.window.showErrorMessage("Failed to load schema or metadata.");
-                return;
+                getLogger().error('Error retrieving schema or metadata', error)
+                vscode.window.showErrorMessage(
+                    'Failed to load schema or metadata.'
+                )
+                return
             }
-    
-            const aceEditorCompletions = this.getAceEditorCompletions(schema);
-            const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind);
+
+            const aceEditorCompletions = this.getAceEditorCompletions(schema)
+            const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind)
             const defaultRunQueryKeyBindingFromSettings =
-                defaultRunQueryKeyBinding();
+                defaultRunQueryKeyBinding()
             const shortCutMapping = this.createShortcutMapping(
                 defaultRunQueryKeyBindingFromSettings
-            );
-    
+            )
+
             const data = {
                 headers: tableData.headers,
                 schema: tableData.schema,
@@ -884,45 +887,48 @@ export class TabularDocumentEditorProvider
                 aceEditorCompletions,
                 totalRowCount: totalRowCount,
                 totalPageCount: totalPageCount,
-            };
-    
+            }
+
             webviewPanel.webview.onDidReceiveMessage(async (e) => {
                 if (e.type === 'ready') {
                     try {
                         if (document.uri.scheme === 'untitled') {
                             this.postMessage(webviewPanel, 'init', {
                                 tableData: data,
-                            });
+                            })
                         } else {
                             getLogger().debug(
                                 `TabularDocumentEditorProvider send initial query Result`
-                            );
-    
+                            )
+
                             this.postMessage(webviewPanel, 'init', {
                                 tableData: data,
-                            });
+                            })
 
                             if (!document.isQueryAble) {
                                 getLogger().debug(
                                     `TabularDocumentEditorProvider resolved data tab data`
-                                );
+                                )
                                 return
                             }
-    
+
                             const queryMessage = {
                                 query: {
                                     queryString: defaultQueryFromSettings,
                                     pageSize: pageSize,
                                 },
-                            };
-    
+                            }
+
                             try {
-                                const result = await document.dataTabWorker.query(queryMessage);
-    
+                                const result =
+                                    await document.dataTabWorker.query(
+                                        queryMessage
+                                    )
+
                                 getLogger().debug(
                                     `TabularDocumentEditorProvider resolved data tab data`
-                                );
-    
+                                )
+
                                 document.fireChangedDocumentEvent(
                                     result.result,
                                     result.headers,
@@ -932,24 +938,33 @@ export class TabularDocumentEditorProvider
                                     result.pageSize,
                                     result.pageNumber,
                                     totalPageCount
-                                );
+                                )
                             } catch (queryError) {
-                                getLogger().error("Failed to get data for data tab", queryError);
-                                vscode.window.showErrorMessage("Failed to get data for data tab.");
+                                getLogger().error(
+                                    'Failed to get data for data tab',
+                                    queryError
+                                )
+                                vscode.window.showErrorMessage(
+                                    'Failed to get data for data tab.'
+                                )
                             }
                         }
                     } catch (messageError) {
-                        getLogger().error("Error processing webview message", messageError);
+                        getLogger().error(
+                            'Error processing webview message',
+                            messageError
+                        )
                     }
                 }
-            });
+            })
         } catch (e: unknown) {
-            getLogger().error("Unexpected error in resolveCustomEditor", e);
-            vscode.window.showErrorMessage("An unexpected error occurred while loading the editor.");
-            this.dispose();
+            getLogger().error('Unexpected error in resolveCustomEditor', e)
+            vscode.window.showErrorMessage(
+                'An unexpected error occurred while loading the editor.'
+            )
+            this.dispose()
         }
     }
-    
 
     private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
         vscode.CustomDocumentEditEvent<CustomDocument>
