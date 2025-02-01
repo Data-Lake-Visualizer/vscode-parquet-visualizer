@@ -159,21 +159,33 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         getLogger().debug(`CustomDocument.ctor()`)
 
+        const dateTimeFormatSettings: DateTimeFormatSettings = {
+            format: dateTimeFormat(),
+            useUTC: outputDateTimeFormatInUTC(),
+        }
+
+        const workerPath = __dirname + '/worker.js'
+
+        const serializeableUri: SerializeableUri = {
+            path: uri.path,
+            scheme: uri.scheme,
+        }
+
+        const dataWorker = new Worker(workerPath, {
+            workerData: {
+                tabName: constants.REQUEST_SOURCE_DATA_TAB,
+                uri: serializeableUri,
+                dateTimeFormatSettings: dateTimeFormatSettings,
+            },
+        })
+
+        this.dataTabWorker = comlink.wrap<BackendWorker>(
+            nodeEndpoint(dataWorker)
+        )
+
         // FIXME: Check if backend is of type ParquetWasm
         if (this.backend instanceof DuckDBBackend) {
             this.isQueryAble = true
-
-            const dateTimeFormatSettings: DateTimeFormatSettings = {
-                format: dateTimeFormat(),
-                useUTC: outputDateTimeFormatInUTC(),
-            }
-
-            const workerPath = __dirname + '/worker.js'
-
-            const serializeableUri: SerializeableUri = {
-                path: uri.path,
-                scheme: uri.scheme,
-            }
 
             const queryWorker = new Worker(workerPath, {
                 workerData: {
@@ -184,17 +196,6 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             })
             this.queryTabWorker = comlink.wrap<BackendWorker>(
                 nodeEndpoint(queryWorker)
-            )
-
-            const dataWorker = new Worker(workerPath, {
-                workerData: {
-                    tabName: constants.REQUEST_SOURCE_DATA_TAB,
-                    uri: serializeableUri,
-                    dateTimeFormatSettings: dateTimeFormatSettings,
-                },
-            })
-            this.dataTabWorker = comlink.wrap<BackendWorker>(
-                nodeEndpoint(dataWorker)
             )
         }
     }
@@ -290,6 +291,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         if (this.backend instanceof DuckDBBackend) {
             this.queryTabWorker.exit()
+            this.dataTabWorker.exit()
+        }
+        else if (this.backend instanceof ParquetWasmBackend) {
             this.dataTabWorker.exit()
         }
 
@@ -739,156 +743,213 @@ export class TabularDocumentEditorProvider
         webviewPanel: vscode.WebviewPanel,
         _token: vscode.CancellationToken
     ): Promise<void> {
-        getLogger().debug(`TabularDocumentEditorProvider.resolveCustomEditor()`)
-        // console.log(`resolveCustomEditor(${document.uri})`);
-        this.webviews.add(document.uri, webviewPanel)
+        getLogger().debug(`TabularDocumentEditorProvider.resolveCustomEditor()`);
+        
+        try {
+            this.webviews.add(document.uri, webviewPanel);
+    
+            // Setup initial content for the webview
+            webviewPanel.webview.options = {
+                enableScripts: true,
+            };
+    
+            webviewPanel.webview.html = this.getHtmlForWebview(
+                webviewPanel.webview,
+                document.isQueryAble
+            );
+    
+            webviewPanel.webview.onDidReceiveMessage((e) =>
+                this.onMessage(document, e)
+            );
+    
+            getLogger().debug(
+                `TabularDocumentEditorProvider - get setting defaultPageSizes()`
+            );
+            const defaultPageSizesFromSettings = defaultPageSizes();
+            const firstPageSize = defaultPageSizesFromSettings[0];
+            const pageSize = Number(firstPageSize);
 
-        // Setup initial content for the webview
-        webviewPanel.webview.options = {
-            enableScripts: true,
-        }
-
-        webviewPanel.webview.html = this.getHtmlForWebview(
-            webviewPanel.webview,
-            document.isQueryAble
-        )
-
-        webviewPanel.webview.onDidReceiveMessage((e) =>
-            this.onMessage(document, e)
-        )
-
-        const defaultPageSizesFromSettings = defaultPageSizes()
-        const firstPageSize = defaultPageSizesFromSettings[0]
-        const defaultQueryFromSettings = defaultQuery()
-        const pageSize = Number(firstPageSize)
-
-        let queryTabQueryData = {
-            result: [] as any[],
-            headers: [] as any[],
-            schema: [] as any,
-            rowCount: 0,
-            pageCount: 0,
-        }
-
-        const isRunQueryOnStartup = runQueryOnStartup()
-        if (isRunQueryOnStartup) {
-            getLogger().info(
-                `TabularDocumentEditorProvider runQueryOnStartup: ${isRunQueryOnStartup}`
-            )
-            const queryMessage = {
-                source: 'query',
-                query: {
-                    queryString: defaultQueryFromSettings,
-                    pageSize: pageSize,
-                },
-            }
-
+            getLogger().debug(
+                `TabularDocumentEditorProvider - get setting defaultQuery()`
+            );
+            const defaultQueryFromSettings = defaultQuery();
+    
+            let tableData = {
+                result: [] as any[],
+                headers: [] as any[],
+                schema: [] as any,
+                rowCount: 0,
+                pageCount: 0,
+            };
+    
             try {
-                const queryResult =
-                    await document.queryTabWorker.query(queryMessage)
-                queryTabQueryData.result = queryResult.result
-                queryTabQueryData.headers = queryResult.headers
-                queryTabQueryData.schema = queryResult.schema
-                queryTabQueryData.rowCount = queryResult.rowCount
-                queryTabQueryData.pageCount = queryResult.pageCount
-            } catch (e: unknown) {
-                console.error(e)
-                const error = e as DuckDbError
-                this.dispose()
-                getLogger().error(error.message)
-                vscode.window.showErrorMessage(error.message)
-                throw Error(error.message)
-            }
-        }
-
-        const totalRowCount = document.backend.getRowCount()
-        const totalPageCount = Math.ceil(totalRowCount / pageSize)
-
-        const schema = document.backend.getSchema()
-        const metadata = document.backend.getMetaData()
-
-        const aceEditorCompletions = this.getAceEditorCompletions(schema)
-        const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind)
-        const defaultRunQueryKeyBindingFromSettings =
-            defaultRunQueryKeyBinding()
-        const shortCutMapping = this.createShortcutMapping(
-            defaultRunQueryKeyBindingFromSettings
-        )
-
-        const data = {
-            headers: queryTabQueryData.headers,
-            schema: queryTabQueryData.schema,
-            schemaTabData: schema,
-            metaData: metadata,
-            rawData: queryTabQueryData.result,
-            rowCount: queryTabQueryData.rowCount,
-            pageCount: queryTabQueryData.pageCount,
-            currentPage: 1,
-            requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
-            requestType: 'paginator',
-            settings: {
-                defaultQuery: defaultQueryFromSettings,
-                defaultPageSizes: defaultPageSizesFromSettings,
-                shortCutMapping: shortCutMapping,
-            },
-            isQueryAble: document.isQueryAble,
-            aceTheme: aceTheme,
-            aceEditorCompletions,
-            totalRowCount: totalRowCount,
-            totalPageCount: totalPageCount,
-        }
-
-        // Wait for the webview to be properly ready before we init
-        webviewPanel.webview.onDidReceiveMessage((e) => {
-            if (e.type === 'ready') {
-                if (document.uri.scheme === 'untitled') {
-                    this.postMessage(webviewPanel, 'init', {
-                        tableData: data,
-                    })
-                } else {
+                const isRunQueryOnStartup = runQueryOnStartup();
+                if (isRunQueryOnStartup && document.isQueryAble) {
                     getLogger().debug(
-                        `TabularDocumentEditorProvider send initial query Result`
-                    )
-                    this.postMessage(webviewPanel, 'init', {
-                        tableData: data,
-                    })
-
-                    // NOTE: start query on datatab.
-                    const pageSize = Number(firstPageSize)
+                        `TabularDocumentEditorProvider - runQueryOnStartup ${isRunQueryOnStartup}`
+                    );
+    
+                    const queryMessage = {
+                        source: 'query',
+                        query: {
+                            queryString: defaultQueryFromSettings,
+                            pageSize: pageSize,
+                        },
+                    };
+    
+                    getLogger().debug(
+                        `TabularDocumentEditorProvider - queryTabWorker.query()`
+                    );
+                    const result =
+                        await document.queryTabWorker.query(queryMessage);
+    
+                        tableData = {
+                        result: result.result,
+                        headers: result.headers,
+                        schema: result.schema,
+                        rowCount: result.rowCount,
+                        pageCount: result.pageCount,
+                    };
+                } else {
                     const queryMessage = {
                         query: {
                             queryString: defaultQueryFromSettings,
                             pageSize: pageSize,
                         },
-                    }
+                    };
 
-                    document.dataTabWorker
-                        .query(queryMessage)
-                        .then((result) => {
-                            getLogger().debug(
-                                `TabularDocumentEditorProvider resolve data tab data`
-                            )
-                            document.fireChangedDocumentEvent(
-                                result.result,
-                                result.headers,
-                                totalRowCount,
-                                constants.REQUEST_SOURCE_DATA_TAB,
-                                result.type,
-                                result.pageSize,
-                                result.pageNumber,
-                                totalPageCount
-                            )
-                        })
-                        .catch((e) => {
-                            getLogger().error(
-                                `TabularDocumentEditorProvider failed to get data tab data`
-                            )
-                            getLogger().error(e)
-                        })
+                    getLogger().debug(
+                        `TabularDocumentEditorProvider - dataTabWorker.query()`
+                    );
+                    
+                    const result = await document.dataTabWorker.query(queryMessage);
+                    tableData = {
+                        result: result.result,
+                        headers: result.headers,
+                        schema: result.schema,
+                        rowCount: result.rowCount,
+                        pageCount: result.pageCount,
+                    };
+
                 }
+            } catch (error) {
+                getLogger().error("Error executing startup query", error);
+                vscode.window.showErrorMessage("Failed to run the initial query.");
             }
-        })
+        
+            let schema, metadata;
+            let totalRowCount: number;
+            let totalPageCount: number;
+            try {
+                totalRowCount = document.backend.getRowCount();
+                totalPageCount = Math.ceil(totalRowCount / pageSize);
+    
+                getLogger().debug("TabularDocumentEditorProvider - getSchema()");
+                schema = document.backend.getSchema();
+    
+                getLogger().debug("TabularDocumentEditorProvider getMetaData()");
+                metadata = document.backend.getMetaData();
+            } catch (error) {
+                getLogger().error("Error retrieving schema or metadata", error);
+                vscode.window.showErrorMessage("Failed to load schema or metadata.");
+                return;
+            }
+    
+            const aceEditorCompletions = this.getAceEditorCompletions(schema);
+            const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind);
+            const defaultRunQueryKeyBindingFromSettings =
+                defaultRunQueryKeyBinding();
+            const shortCutMapping = this.createShortcutMapping(
+                defaultRunQueryKeyBindingFromSettings
+            );
+    
+            const data = {
+                headers: tableData.headers,
+                schema: tableData.schema,
+                schemaTabData: schema,
+                metaData: metadata,
+                rawData: tableData.result,
+                rowCount: tableData.rowCount,
+                pageCount: tableData.pageCount,
+                currentPage: 1,
+                requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
+                requestType: 'paginator',
+                settings: {
+                    defaultQuery: defaultQueryFromSettings,
+                    defaultPageSizes: defaultPageSizesFromSettings,
+                    shortCutMapping: shortCutMapping,
+                },
+                isQueryAble: document.isQueryAble,
+                aceTheme: aceTheme,
+                aceEditorCompletions,
+                totalRowCount: totalRowCount,
+                totalPageCount: totalPageCount,
+            };
+    
+            webviewPanel.webview.onDidReceiveMessage(async (e) => {
+                if (e.type === 'ready') {
+                    try {
+                        if (document.uri.scheme === 'untitled') {
+                            this.postMessage(webviewPanel, 'init', {
+                                tableData: data,
+                            });
+                        } else {
+                            getLogger().debug(
+                                `TabularDocumentEditorProvider send initial query Result`
+                            );
+    
+                            this.postMessage(webviewPanel, 'init', {
+                                tableData: data,
+                            });
+
+                            if (!document.isQueryAble) {
+                                getLogger().debug(
+                                    `TabularDocumentEditorProvider resolved data tab data`
+                                );
+                                return
+                            }
+    
+                            const queryMessage = {
+                                query: {
+                                    queryString: defaultQueryFromSettings,
+                                    pageSize: pageSize,
+                                },
+                            };
+    
+                            try {
+                                const result = await document.dataTabWorker.query(queryMessage);
+    
+                                getLogger().debug(
+                                    `TabularDocumentEditorProvider resolved data tab data`
+                                );
+    
+                                document.fireChangedDocumentEvent(
+                                    result.result,
+                                    result.headers,
+                                    totalRowCount,
+                                    constants.REQUEST_SOURCE_DATA_TAB,
+                                    result.type,
+                                    result.pageSize,
+                                    result.pageNumber,
+                                    totalPageCount
+                                );
+                            } catch (queryError) {
+                                getLogger().error("Failed to get data for data tab", queryError);
+                                vscode.window.showErrorMessage("Failed to get data for data tab.");
+                            }
+                        }
+                    } catch (messageError) {
+                        getLogger().error("Error processing webview message", messageError);
+                    }
+                }
+            });
+        } catch (e: unknown) {
+            getLogger().error("Unexpected error in resolveCustomEditor", e);
+            vscode.window.showErrorMessage("An unexpected error occurred while loading the editor.");
+            this.dispose();
+        }
     }
+    
 
     private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
         vscode.CustomDocumentEditEvent<CustomDocument>
@@ -1111,7 +1172,7 @@ export class TabularDocumentEditorProvider
 
         if (!isQueryAble) {
             queryActionsBodyHtml =
-                '<p>The loaded backend does not support SQL.</p>'
+                '<p>The loaded backend parquet-wasm does not support SQL.</p>'
         } else {
             queryActionsBodyHtml = `
               <div id="query-actions" class="button-container">
