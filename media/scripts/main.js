@@ -686,7 +686,7 @@
                         </span>
                     </span>
                     <span class="tabulator-paginator">
-                        <button class="tabulator-page" disabled id="reset-sort-${requestSourceDataTab}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort" style="margin-right: 10px;">Reset Sort</button>
+                        ${isQueryAble ? `<button class="tabulator-page" disabled id="reset-sort-${requestSourceDataTab}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort" style="margin-right: 10px;">Reset Sort</button>` : ''}
 
                         <label>Page Size</label>
                         <select class="tabulator-page-size" disabled id="dropdown-page-size-${requestSourceDataTab}" aria-label="Page Size" title="Page Size">
@@ -1052,20 +1052,22 @@
     ) {
         // console.log(`initializeFooter(rowCount:${rowCount}, requestSource:${requestSource})`);
 
-        const resetSortButton = /** @type {HTMLElement} */ (
-            document.querySelector(`#reset-sort-${requestSource}`)
-        )
-        resetSortButton.addEventListener('click', () => {
-            if (requestSource === requestSourceDataTab) {
-                dataTable.clearSort()
-            } else {
-                resultsTable.clearSort()
-            }
+        if (isQueryAble) {
+            const resetSortButton = /** @type {HTMLElement} */ (
+                document.querySelector(`#reset-sort-${requestSource}`)
+            )
+            resetSortButton.addEventListener('click', () => {
+                if (requestSource === requestSourceDataTab) {
+                    dataTable.clearSort()
+                } else {
+                    resultsTable.clearSort()
+                }
 
-            const sortQuery = undefined
+                const sortQuery = undefined
 
-            onSort(sortQuery, requestSource)
-        })
+                onSort(sortQuery, requestSource)
+            })
+        }
 
         const nextButton = /** @type {HTMLElement} */ (
             document.querySelector(`#btn-next-${requestSource}`)
