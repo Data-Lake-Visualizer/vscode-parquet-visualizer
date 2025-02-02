@@ -12,7 +12,6 @@
 
     let aceEditor
 
-    let dataTableBuilt = false
     let isQueryRunning = false
 
     let currentPageDataTab = 1
@@ -35,6 +34,8 @@
 
     let numRecordsDropDownResultTableHasChanged = false
     let numRecordsDropdownSelectedIndex = 0
+
+    let isQueryAble = false
 
     const requestSourceDataTab = 'dataTab'
     const requestSourceQueryTab = 'queryTab'
@@ -444,7 +445,9 @@
         resultsTable.on('popupOpened', onPopupOpenedQueryResultTab)
 
         resultsTable.on('tableBuilt', function (data) {
-            initializeSort(requestSourceQueryTab)
+            if (isQueryAble) {
+                initializeSort(requestSourceQueryTab)
+            }
             resetQueryControls()
             resetQueryResultControls(rowCountQueryTab)
             initializeFooter(rowCountQueryTab, requestSourceQueryTab)
@@ -655,9 +658,11 @@
     ) {
         let columns = headers.map((c) => ({
             ...c,
-            sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
-                return 0
-            },
+            ...(isQueryAble && {
+                sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
+                    return 0
+                },
+            }),
             cellClick: onCellClick,
         }))
 
@@ -681,7 +686,7 @@
                         </span>
                     </span>
                     <span class="tabulator-paginator">
-                        <button class="tabulator-page" disabled id="reset-sort-${requestSourceDataTab}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort" style="margin-right: 10px;">Reset Sort</button>
+                        ${isQueryAble ? `<button class="tabulator-page" disabled id="reset-sort-${requestSourceDataTab}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort" style="margin-right: 10px;">Reset Sort</button>` : ''}
 
                         <label>Page Size</label>
                         <select class="tabulator-page-size" disabled id="dropdown-page-size-${requestSourceDataTab}" aria-label="Page Size" title="Page Size">
@@ -696,7 +701,11 @@
         })
 
         dataTable.on('tableBuilt', () => {
-            initializeSort(requestSourceDataTab)
+            // console.log("data Table built")
+            if (isQueryAble) {
+                initializeSort(requestSourceDataTab)
+            }
+
             initializeFooter(rowCountDataTab, requestSourceDataTab)
             updatePageCounterState(
                 currentPageDataTab,
@@ -922,7 +931,7 @@
             clearIcon.style.display = 'none'
         }
 
-        const searchValue = filterValueInput.value.trim()
+        const searchValue = filterValueInput?.value.trim()
 
         // Clear the minimum timeout whenever input changes
         clearTimeout(minSearchInputTimeout)
@@ -987,7 +996,7 @@
                     vscode.postMessage({
                         type: 'exportQueryResults',
                         exportType: selectedOption,
-                        searchString: filterValueInput.value,
+                        searchString: filterValueInput?.value,
                         sort: sortObjectQueryTab,
                     })
 
@@ -1043,20 +1052,22 @@
     ) {
         // console.log(`initializeFooter(rowCount:${rowCount}, requestSource:${requestSource})`);
 
-        const resetSortButton = /** @type {HTMLElement} */ (
-            document.querySelector(`#reset-sort-${requestSource}`)
-        )
-        resetSortButton.addEventListener('click', () => {
-            if (requestSource === requestSourceDataTab) {
-                dataTable.clearSort()
-            } else {
-                resultsTable.clearSort()
-            }
+        if (isQueryAble) {
+            const resetSortButton = /** @type {HTMLElement} */ (
+                document.querySelector(`#reset-sort-${requestSource}`)
+            )
+            resetSortButton.addEventListener('click', () => {
+                if (requestSource === requestSourceDataTab) {
+                    dataTable.clearSort()
+                } else {
+                    resultsTable.clearSort()
+                }
 
-            const sortQuery = undefined
+                const sortQuery = undefined
 
-            onSort(sortQuery, requestSource)
-        })
+                onSort(sortQuery, requestSource)
+            })
+        }
 
         const nextButton = /** @type {HTMLElement} */ (
             document.querySelector(`#btn-next-${requestSource}`)
@@ -1103,7 +1114,7 @@
                 pageSize: pageSize,
                 pageNumber: pageNumber,
                 sort: sort,
-                searchString: filterValueInput.value,
+                searchString: filterValueInput?.value,
                 source: requestSource,
             })
         })
@@ -1136,7 +1147,7 @@
                 pageSize: pageSize,
                 pageNumber: pageNumber,
                 sort: sort,
-                searchString: filterValueInput.value,
+                searchString: filterValueInput?.value,
                 source: requestSource,
             })
         })
@@ -1167,7 +1178,7 @@
                 pageSize: pageSize,
                 pageNumber: pageNumber,
                 sort: sort,
-                searchString: filterValueInput.value,
+                searchString: filterValueInput?.value,
                 source: requestSource,
             })
         })
@@ -1200,7 +1211,7 @@
                 pageSize: pageSize,
                 pageNumber: pageNumber,
                 sort: sort,
-                searchString: filterValueInput.value,
+                searchString: filterValueInput?.value,
                 source: requestSource,
             })
         })
@@ -1246,7 +1257,7 @@
                         newPageSize: pageSize,
                         pageNumber: pageNumber,
                         sort: sort,
-                        searchString: filterValueInput.value,
+                        searchString: filterValueInput?.value,
                         source: requestSource,
                     },
                 })
@@ -1262,16 +1273,21 @@
             case 'init': {
                 const tableData = body.tableData
                 if (tableData) {
-                    defaultPageSizes = tableData.settings.defaultPageSizes
-                    rowCountDataTab = tableData.totalRowCount
-                    initDataTable(
-                        [],
-                        tableData.headers,
-                        tableData.totalPageCount
-                    )
                     initSchema(tableData.schemaTabData)
                     initMetaData(tableData.metaData)
-                    if (tableData.isQueryAble) {
+                    isQueryAble = tableData.isQueryAble
+                    defaultPageSizes = tableData.settings.defaultPageSizes
+
+                    if (!tableData.isQueryAble) {
+                        rowCountDataTab = tableData.totalRowCount
+                        amountOfPagesDataTab = tableData.totalPageCount
+                        initDataTable(
+                            tableData.rawData,
+                            tableData.headers,
+                            tableData.totalPageCount
+                        )
+                        document.getElementById('data-tab')?.click()
+                    } else {
                         initCodeEditor(
                             tableData.settings.defaultQuery,
                             tableData.settings.shortCutMapping,
@@ -1280,10 +1296,16 @@
                         )
                         schemaQueryResult = tableData.schema
                         rowCountQueryTab = tableData.rowCount
+                        rowCountDataTab = tableData.rowCount
                         currentPageQueryTab = tableData.currentPage
                         amountOfPagesQueryTab = tableData.pageCount
                         initializeQueryResultControls()
                         initResultTable(tableData.rawData, tableData.headers)
+                        initDataTable(
+                            [],
+                            tableData.headers,
+                            tableData.totalPageCount
+                        )
                     }
                 }
                 break
