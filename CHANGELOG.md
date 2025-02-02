@@ -1,3 +1,10 @@
+## [0.25.1](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.0...v0.25.1) (2025-02-02)
+
+
+### Bug Fixes
+
+* make sure parquet-wasm works with duckdb ([61d0545](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/61d0545ae89fdd3427022554b3d941ad232b8a95))
+
 # [0.25.0](https://github.com/luusluus/vscode-parquet-visualizer/compare/v0.24.1...v0.25.0) (2025-01-26)
 
 
