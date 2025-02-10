@@ -17,8 +17,8 @@
     let currentPageDataTab = 1
     let currentPageQueryTab = 1
 
-    let pageSizeDataTab = 1;
-    let pageSizeQueryTab = 1;
+    let pageSizeDataTab = 1
+    let pageSizeQueryTab = 1
 
     let amountOfPagesDataTab = 1
     let amountOfPagesQueryTab = 1
@@ -457,10 +457,7 @@
             resetQueryControls()
             resetQueryResultControls(rowCountQueryTab)
             initializeFooter(rowCountQueryTab, requestSourceQueryTab)
-            updatePageCounterState(
-                amountOfPagesQueryTab,
-                requestSourceQueryTab
-            )
+            updatePageCounterState(amountOfPagesQueryTab, requestSourceQueryTab)
             updateNavigationButtonsState(
                 amountOfPagesQueryTab,
                 requestSourceQueryTab
@@ -619,9 +616,9 @@
     function initSchema(/** @type {any} */ data) {
         const columns = [
             { title: '#', field: 'index', width: 50 },
-            { 
-                title: 'Column name', 
-                field: 'name', 
+            {
+                title: 'Column name',
+                field: 'name',
                 width: 150,
                 cellClick: onCellClick,
             },
@@ -718,10 +715,7 @@
             }
 
             initializeFooter(rowCountDataTab, requestSourceDataTab)
-            updatePageCounterState(
-                amountOfPagesDataTab,
-                requestSourceDataTab
-            )
+            updatePageCounterState(amountOfPagesDataTab, requestSourceDataTab)
             updateNavigationButtonsState(
                 amountOfPagesDataTab,
                 requestSourceDataTab
@@ -837,7 +831,10 @@
             return
         }
 
-        const currentPage = requestSource === requestSourceDataTab ? currentPageDataTab : currentPageQueryTab
+        const currentPage =
+            requestSource === requestSourceDataTab
+                ? currentPageDataTab
+                : currentPageQueryTab
 
         const currentPageSpan = /** @type {HTMLElement} */ (
             document.querySelector(`#page-current-${requestSource}`)
@@ -881,7 +878,10 @@
             document.querySelector(`#btn-last-${requestSource}`)
         )
 
-        let currentPage = requestSource === requestSourceDataTab ? currentPageDataTab : currentPageQueryTab
+        let currentPage =
+            requestSource === requestSourceDataTab
+                ? currentPageDataTab
+                : currentPageQueryTab
 
         if (amountOfPages <= 1) {
             nextButton.setAttribute('disabled', '')
@@ -1053,18 +1053,23 @@
         })
     }
 
-    function calcNewPagePageNumerOnPageSizeChange(newPageSize, oldPageSize, pageNumber) {
-        let nextPageNumber;
+    function calcNewPagePageNumerOnPageSizeChange(
+        newPageSize,
+        oldPageSize,
+        pageNumber
+    ) {
+        let nextPageNumber
         if (newPageSize === undefined) {
-            nextPageNumber = 1;
+            nextPageNumber = 1
         } else {
             // Calculate the zero-based index of the first item on the current page
             const firstItemIndex = (pageNumber - 1) * Number(oldPageSize)
 
             // Calculate the new page number
-            nextPageNumber = Math.floor(firstItemIndex / Number(newPageSize)) + 1
+            nextPageNumber =
+                Math.floor(firstItemIndex / Number(newPageSize)) + 1
         }
-        return nextPageNumber;
+        return nextPageNumber
     }
 
     function initializeFooter(
@@ -1258,7 +1263,7 @@
                     document.querySelector(`#input-filter-values`)
                 )
 
-                let pageNumber;
+                let pageNumber
                 let sort
                 // https://stackoverflow.com/questions/61809200/default-page-number-on-page-size-change
                 if (requestSource === requestSourceDataTab) {
@@ -1267,11 +1272,12 @@
                     if (pageSize === undefined) {
                         currentPageDataTab = pageNumber = 1
                     } else {
-                        currentPageDataTab = pageNumber = calcNewPagePageNumerOnPageSizeChange(
-                            Number(pageSize),
-                            pageSizeDataTab,
-                            currentPageDataTab
-                        )
+                        currentPageDataTab = pageNumber =
+                            calcNewPagePageNumerOnPageSizeChange(
+                                Number(pageSize),
+                                pageSizeDataTab,
+                                currentPageDataTab
+                            )
                         pageSizeDataTab = Number(pageSize)
                     }
                 } else {
@@ -1281,14 +1287,14 @@
                     if (pageSize === undefined) {
                         currentPageQueryTab = pageNumber = 1
                     } else {
-                        currentPageQueryTab = pageNumber = calcNewPagePageNumerOnPageSizeChange(
-                            Number(pageSize),
-                            pageSizeQueryTab,
-                            currentPageQueryTab
-                        )
+                        currentPageQueryTab = pageNumber =
+                            calcNewPagePageNumerOnPageSizeChange(
+                                Number(pageSize),
+                                pageSizeQueryTab,
+                                currentPageQueryTab
+                            )
                         pageSizeQueryTab = Number(pageSize)
                     }
-
                 }
                 vscode.postMessage({
                     type: 'changePageSize',

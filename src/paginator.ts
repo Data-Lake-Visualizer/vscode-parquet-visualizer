@@ -65,7 +65,7 @@ export abstract class Paginator {
         this.totalPages = this.getTotalPages(query.pageSize)
 
         if (query.pageNumber > this.totalPages) {
-            throw new Error("Page number is higher than amount of pages.");
+            throw new Error('Page number is higher than amount of pages.')
         }
 
         if (
@@ -73,7 +73,7 @@ export abstract class Paginator {
             (this.totalPages !== undefined &&
                 query.pageNumber > this.totalPages)
         ) {
-            throw new Error("Invalid page number.");
+            throw new Error('Invalid page number.')
         }
         return this.getItems(query)
     }
