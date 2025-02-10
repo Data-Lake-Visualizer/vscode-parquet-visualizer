@@ -16,6 +16,10 @@
 
     let currentPageDataTab = 1
     let currentPageQueryTab = 1
+
+    let pageSizeDataTab = 1;
+    let pageSizeQueryTab = 1;
+
     let amountOfPagesDataTab = 1
     let amountOfPagesQueryTab = 1
 
@@ -340,6 +344,8 @@
             numRecordsDropdownSelectedIndex = numRecordsDropdown.selectedIndex
         }
 
+        pageSizeQueryTab = defaultPageSizes[0]
+
         const options = createOptionHTMLElementsString(defaultPageSizes)
 
         resultsTable = new Tabulator(`#table-${requestSourceQueryTab}`, {
@@ -452,12 +458,10 @@
             resetQueryResultControls(rowCountQueryTab)
             initializeFooter(rowCountQueryTab, requestSourceQueryTab)
             updatePageCounterState(
-                currentPageQueryTab,
                 amountOfPagesQueryTab,
                 requestSourceQueryTab
             )
             updateNavigationButtonsState(
-                currentPageQueryTab,
                 amountOfPagesQueryTab,
                 requestSourceQueryTab
             )
@@ -615,7 +619,12 @@
     function initSchema(/** @type {any} */ data) {
         const columns = [
             { title: '#', field: 'index', width: 50 },
-            { title: 'Column name', field: 'name', width: 150 },
+            { 
+                title: 'Column name', 
+                field: 'name', 
+                width: 150,
+                cellClick: onCellClick,
+            },
             {
                 title: 'Data type',
                 field: 'type',
@@ -666,6 +675,8 @@
             cellClick: onCellClick,
         }))
 
+        pageSizeDataTab = defaultPageSizes[0]
+
         const options = createOptionHTMLElementsString(defaultPageSizes)
         dataTable = new Tabulator('#table', {
             columnDefaults: {
@@ -708,12 +719,10 @@
 
             initializeFooter(rowCountDataTab, requestSourceDataTab)
             updatePageCounterState(
-                currentPageDataTab,
                 amountOfPagesDataTab,
                 requestSourceDataTab
             )
             updateNavigationButtonsState(
-                currentPageDataTab,
                 amountOfPagesDataTab,
                 requestSourceDataTab
             )
@@ -743,13 +752,11 @@
         /** @type {number} */ rowCount,
         /** @type {string} */ requestSource,
         /** @type {string} */ requestType,
-        /** @type {number} */ currentPage,
         /** @type {number} */ pageCount,
         /** @type {any} */ schema
     ) {
         if (requestSource === requestSourceDataTab) {
             rowCountDataTab = rowCount
-            currentPageDataTab = currentPage
             amountOfPagesDataTab = pageCount
 
             dataTable.replaceData(data)
@@ -758,21 +765,18 @@
             if (requestType === 'query') {
                 schemaQueryResult = schema
                 rowCountQueryTab = rowCount
-                currentPageQueryTab = currentPage
                 amountOfPagesQueryTab = pageCount
                 sortObjectQueryTab = undefined
 
                 initResultTable(data, headers)
             } else if (requestType === 'paginator') {
                 rowCountQueryTab = rowCount
-                currentPageQueryTab = currentPage
                 amountOfPagesQueryTab = pageCount
 
                 resultsTable.replaceData(data)
                 resultsTable.clearAlert()
             } else if (requestType === 'search') {
                 rowCountQueryTab = rowCount
-                currentPageQueryTab = currentPage
                 amountOfPagesQueryTab = pageCount
 
                 resultsTable.replaceData(data)
@@ -794,6 +798,7 @@
         /** @type {String} */ requestSource,
         /** @type {Number} */ rowCount
     ) {
+        // console.log(`updatePageCount(${requestSource}, ${rowCount})`)
         if (requestSource === requestSourceQueryTab) {
             const pageCountElement = document.getElementById('page-count')
             if (rowCount > 0) {
@@ -823,15 +828,16 @@
     }
 
     function updatePageCounterState(
-        /** @type {Number} */ currentPage,
         /** @type {Number} */ amountOfPages,
         /** @type {String} */ requestSource
     ) {
-        // console.log(`updatePageCounterState(${currentPage}, ${amountOfPages}, ${requestSource})`);
+        // console.log(`updatePageCounterState(amountOfPages:${amountOfPages}, ${requestSource})`);
 
         if (!doesFooterExist()) {
             return
         }
+
+        const currentPage = requestSource === requestSourceDataTab ? currentPageDataTab : currentPageQueryTab
 
         const currentPageSpan = /** @type {HTMLElement} */ (
             document.querySelector(`#page-current-${requestSource}`)
@@ -853,7 +859,6 @@
     }
 
     function updateNavigationButtonsState(
-        /** @type {Number} */ currentPage,
         /** @type {Number} */ amountOfPages,
         /** @type {String} */ requestSource
     ) {
@@ -875,6 +880,8 @@
         const lastButton = /** @type {HTMLElement} */ (
             document.querySelector(`#btn-last-${requestSource}`)
         )
+
+        let currentPage = requestSource === requestSourceDataTab ? currentPageDataTab : currentPageQueryTab
 
         if (amountOfPages <= 1) {
             nextButton.setAttribute('disabled', '')
@@ -1044,6 +1051,20 @@
                 type: 'copyQueryResults',
             })
         })
+    }
+
+    function calcNewPagePageNumerOnPageSizeChange(newPageSize, oldPageSize, pageNumber) {
+        let nextPageNumber;
+        if (newPageSize === undefined) {
+            nextPageNumber = 1;
+        } else {
+            // Calculate the zero-based index of the first item on the current page
+            const firstItemIndex = (pageNumber - 1) * Number(oldPageSize)
+
+            // Calculate the new page number
+            nextPageNumber = Math.floor(firstItemIndex / Number(newPageSize)) + 1
+        }
+        return nextPageNumber;
     }
 
     function initializeFooter(
@@ -1227,34 +1248,52 @@
                 const selectedOption = numRecordsDropdown.options[selectedIndex]
                 const getSelectedPageSize =
                     selectedOption.innerText.toLowerCase()
+
                 const pageSize =
                     getSelectedPageSize === 'all'
                         ? undefined
                         : getSelectedPageSize
+
                 const filterValueInput = /** @type {HTMLElement} */ (
                     document.querySelector(`#input-filter-values`)
                 )
 
-                const pageNumber = 1
+                let pageNumber;
                 let sort
+                // https://stackoverflow.com/questions/61809200/default-page-number-on-page-size-change
                 if (requestSource === requestSourceDataTab) {
                     dataTable.alert('Loading...')
                     sort = sortObjectDataTab
                     if (pageSize === undefined) {
-                        currentPageDataTab = 1
+                        currentPageDataTab = pageNumber = 1
+                    } else {
+                        currentPageDataTab = pageNumber = calcNewPagePageNumerOnPageSizeChange(
+                            Number(pageSize),
+                            pageSizeDataTab,
+                            currentPageDataTab
+                        )
+                        pageSizeDataTab = Number(pageSize)
                     }
                 } else {
                     numRecordsDropDownResultTableHasChanged = true
                     resultsTable.alert('Loading...')
                     sort = sortObjectQueryTab
                     if (pageSize === undefined) {
-                        currentPageQueryTab = 1
+                        currentPageQueryTab = pageNumber = 1
+                    } else {
+                        currentPageQueryTab = pageNumber = calcNewPagePageNumerOnPageSizeChange(
+                            Number(pageSize),
+                            pageSizeQueryTab,
+                            currentPageQueryTab
+                        )
+                        pageSizeQueryTab = Number(pageSize)
                     }
+
                 }
                 vscode.postMessage({
                     type: 'changePageSize',
                     data: {
-                        newPageSize: pageSize,
+                        pageSize: pageSize,
                         pageNumber: pageNumber,
                         sort: sort,
                         searchString: filterValueInput?.value,
@@ -1286,6 +1325,7 @@
                             tableData.headers,
                             tableData.totalPageCount
                         )
+                        // NOTE: Make sure data tab is clicked if parquet-wasm
                         document.getElementById('data-tab')?.click()
                     } else {
                         initCodeEditor(
@@ -1297,7 +1337,6 @@
                         schemaQueryResult = tableData.schema
                         rowCountQueryTab = tableData.rowCount
                         rowCountDataTab = tableData.rowCount
-                        currentPageQueryTab = tableData.currentPage
                         amountOfPagesQueryTab = tableData.pageCount
                         initializeQueryResultControls()
                         initResultTable(tableData.rawData, tableData.headers)
@@ -1319,18 +1358,15 @@
                         tableData.rowCount,
                         tableData.requestSource,
                         tableData.requestType,
-                        tableData.currentPage,
                         tableData.pageCount,
                         tableData.schema
                     )
 
                     updatePageCounterState(
-                        tableData.currentPage,
                         tableData.pageCount,
                         tableData.requestSource
                     )
                     updateNavigationButtonsState(
-                        tableData.currentPage,
                         tableData.pageCount,
                         tableData.requestSource
                     )

@@ -375,13 +375,10 @@ export class BackendWorker {
 
         const pageCount = getPageCountFromInput(message.pageSize, rowCount)
 
-        const pageNumber = this.queryHelper.paginator.getPageNumber()
-
         return {
             result: result,
             headers: headers,
             type: 'paginator',
-            pageNumber: pageNumber,
             pageCount: pageCount,
             rowCount: rowCount,
             pageSize: message.pageSize,
