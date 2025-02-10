@@ -215,7 +215,6 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             readonly rowCount?: number
             readonly pageCount?: number
             readonly pageSize?: number
-            readonly currentPage?: number
             readonly requestSource?: string
             readonly requestType?: string
             readonly schema?: any[]
@@ -238,14 +237,13 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         pageCount: number,
         schema: any[] = []
     ) {
-        // console.log(`fireChangedDocumentEvent(${this.uri}). Page {${this.currentPage}}`);
+        // console.log(`fireChangedDocumentEvent(${this.uri})}`);
         const tableData = {
             rawData: rawData,
             headers: headers,
             rowCount: rowCount,
             pageCount: pageCount,
             pageSize: pageSize,
-            currentPage: pageNumber,
             requestSource: requestSource,
             requestType: requestType,
             schema: schema,
@@ -337,7 +335,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             queryResult.result,
             queryResult.rowCount,
             queryResult.pageSize,
-            queryResult.pageNumber,
+            message.pageNumber,
             queryResult.pageCount,
             message.source
         )
@@ -387,7 +385,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         const workerMessage = {
             source: message.source,
             type: 'currentPage',
-            pageSize: message.newPageSize,
+            pageNumber: message.pageNumber,
+            pageSize: message.pageSize,
             sort: message.sort,
             searchString: message.searchString,
         }
@@ -621,7 +620,6 @@ export class TabularDocumentEditorProvider
                     rowCount: e.rowCount,
                     pageCount: e.pageCount,
                     pageSize: e.pageSize,
-                    currentPage: e.currentPage,
                     requestSource: e.requestSource,
                     requestType: e.requestType,
                     schema: e.schema,
@@ -874,7 +872,6 @@ export class TabularDocumentEditorProvider
                 rawData: tableData.result,
                 rowCount: tableData.rowCount,
                 pageCount: tableData.pageCount,
-                currentPage: 1,
                 requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
                 requestType: 'paginator',
                 settings: {
