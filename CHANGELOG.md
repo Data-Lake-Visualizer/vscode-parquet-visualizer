@@ -1,3 +1,10 @@
+## [0.25.2](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.1...v0.25.2) (2025-02-10)
+
+
+### Bug Fixes
+
+* keep the current page on page size change ([3be0d01](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/3be0d01afd8335598cb53182d3f065062e0749ab))
+
 ## [0.25.1](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.0...v0.25.1) (2025-02-02)
 
 
