@@ -41,19 +41,6 @@ export class DuckDBPaginator extends Paginator {
             FROM ${source}
         `
 
-        if (query.searchString && query.searchString !== '') {
-            const schema = this.backend.arrowSchema
-            const whereClause = schema.fields
-                .map((col) =>
-                    col.typeId === Type.Utf8 || col.typeId === Type.LargeUtf8
-                        ? `"${col.name}" LIKE '%${query.searchString}%'`
-                        : `CAST("${col.name}" AS TEXT) LIKE '%${query.searchString}%'`
-                )
-                .join(' OR ')
-
-            queryStatement += `WHERE ${whereClause}`
-        }
-
         if (query.sort) {
             queryStatement += `
                 ORDER BY "${query.sort.field}" ${query.sort.direction.toUpperCase()}

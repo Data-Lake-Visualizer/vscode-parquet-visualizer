@@ -215,6 +215,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             readonly rowCount?: number
             readonly pageCount?: number
             readonly pageSize?: number
+            readonly pageNumber?: number
             readonly requestSource?: string
             readonly requestType?: string
             readonly schema?: any[]
@@ -244,6 +245,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             rowCount: rowCount,
             pageCount: pageCount,
             pageSize: pageSize,
+            pageNumber: pageNumber,
             requestSource: requestSource,
             requestType: requestType,
             schema: schema,
@@ -252,7 +254,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     }
 
     private readonly _onDidExport = this._register(
-        new vscode.EventEmitter<{}>()
+        new vscode.EventEmitter<{
+            readonly tabName: string
+        }>()
     )
 
     /**
@@ -319,8 +323,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         )
     }
 
-    fireExportCompleteEvent() {
-        this._onDidExport.fire({})
+    fireExportCompleteEvent(tabName: string) {
+        this._onDidExport.fire({
+            tabName: tabName
+        })
     }
 
     async getPage(message: any) {
@@ -404,11 +410,14 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             searchString: message.query.searchString,
         }
 
+        console.log(workerMessage)
+
         await this.getPage(workerMessage)
     }
 
     async search(message: any) {
-        const queryResult = await this.queryTabWorker.search({
+        let queryResult;
+        let searchQuery ={
             source: 'search',
             query: {
                 pageNumber: 1,
@@ -417,13 +426,19 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 queryString: message.query.queryString,
                 sort: message.query.sort,
             },
-        })
+        }
+
+        if (message.source === constants.REQUEST_SOURCE_QUERY_TAB) {
+            queryResult = await this.queryTabWorker.search(searchQuery)
+        } else {
+            queryResult = await this.dataTabWorker.search(searchQuery)
+        }
 
         this.fireChangedDocumentEvent(
             queryResult.result,
             queryResult.headers,
             queryResult.rowCount,
-            constants.REQUEST_SOURCE_QUERY_TAB,
+            message.source,
             queryResult.type,
             queryResult.pageSize,
             queryResult.pageNumber,
@@ -454,7 +469,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         const fileNameExtensionfullName =
             constants.FILENAME_SHORTNAME_FULLNAME_MAPPING[exportType]
         const savedPath = await vscode.window.showSaveDialog({
-            title: `Export Query Results as ${exportType}`,
+            title: `Export Results as ${exportType}`,
             filters: {
                 [fileNameExtensionfullName]: [extension],
             },
@@ -462,7 +477,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         })
 
         if (savedPath === undefined) {
-            this.fireExportCompleteEvent()
+            this.fireExportCompleteEvent(message.tabName)
             return
         }
 
@@ -475,9 +490,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 savedPath: savedPath.fsPath,
                 searchString: message.searchString,
                 sort: message.sort,
+                tabName: message.tabName
             })
 
-            this.fireExportCompleteEvent()
+            this.fireExportCompleteEvent(message.tabName)
             vscode.window
                 .showInformationMessage(
                     `Exported query result to ${exportResult.path}`,
@@ -607,6 +623,7 @@ export class TabularDocumentEditorProvider
                 for (const webviewPanel of this.webviews.get(document.uri)) {
                     this.postMessage(webviewPanel, 'exportComplete', {
                         type: 'exportComplete',
+                        tabName: e.tabName
                     })
                 }
             })
@@ -620,6 +637,7 @@ export class TabularDocumentEditorProvider
                     rowCount: e.rowCount,
                     pageCount: e.pageCount,
                     pageSize: e.pageSize,
+                    pageNumber: e.pageNumber,
                     requestSource: e.requestSource,
                     requestType: e.requestType,
                     schema: e.schema,
@@ -910,6 +928,7 @@ export class TabularDocumentEditorProvider
                             }
 
                             const queryMessage = {
+                                source: 'paginator',
                                 query: {
                                     queryString: defaultQueryFromSettings,
                                     pageSize: pageSize,
@@ -1038,7 +1057,7 @@ export class TabularDocumentEditorProvider
                 TelemetryManager.sendEvent('onSearch')
                 break
             }
-            case 'exportQueryResults': {
+            case 'exportResults': {
                 const exportType = await document.export(message)
                 TelemetryManager.sendEvent('queryResultsExported', {
                     fromFileType: 'parquet',
@@ -1046,9 +1065,9 @@ export class TabularDocumentEditorProvider
                 })
                 break
             }
-            case 'copyQueryResults': {
+            case 'copyResults': {
                 vscode.window.showInformationMessage(
-                    'Query result page data copied'
+                    `Data copied from ${message.tabName}`
                 )
 
                 TelemetryManager.sendEvent('queryResultsCopied')
@@ -1072,6 +1091,76 @@ export class TabularDocumentEditorProvider
             return String(variables[key] || '')
         })
     }
+
+    private createTableActionsHtml(tabName: string, isQueryable: boolean) {
+        let tableActionHtml = '';
+
+        if (isQueryable) {
+            tableActionHtml += `
+                <div class="button-container">
+                    <button id="run-query-btn" class="tabulator-page flex-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+                            <polygon points="5,4 11,8 5,12" fill="none" stroke="#84CF85" stroke-width="1.5" />
+                        </svg>
+                        <span id="run-query-btn-text">Run</span>
+                    </button>
+                    <button id="clear-query-btn" class="tabulator-page flex-button">Clear</button>
+                </div>
+                <div id="editor"></div>`
+        }
+
+        tableActionHtml += `
+            <div class="button-container table-actions">
+                <div class="flex-button search-container" style="margin-right: auto;">
+                    <div class="search-icon-element">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" class="search-icon">
+                            <circle cx="7" cy="7" r="5"></circle>
+                            <path d="m15 15-4.5-4.5"></path>
+                        </svg>
+                    </div>
+                    <input class="search-box" id="input-filter-values-${tabName}" type="text" placeholder="Search rows">
+                    <div class="clear-icon-element" id="clear-icon-${tabName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" class="clear-icon">
+                            <path d="m2 2 12 12M14 2 2 14" stroke="none"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <button class="tabulator-page flex-button" id="reset-sort-${tabName}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort">Reset Sort</button>
+
+                <button class="tabulator-page flex-button" id="copy-${tabName}" type="button" role="button" aria-label="Copy page to clipboard" title="Copy page to clipboard">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" width="16" height="16" class="copy-icon">
+                    <path d="M2 5h9v9H2z" class="stroke-linejoin-round"></path>
+                    <path d="M5 5V2h9v9h-3" class="stroke-linejoin-round"></path>
+                </svg>
+                Copy page
+                </button>
+                
+                <div class="dropdown">
+                    <button class="flex-button" id="export-${tabName}" type="button" role="button" aria-label="Export results" title="Export results">
+                    <svg class="export-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="16" rx="2" ry="2" fill="none" stroke="white"/>
+                        <path d="M12 5v12" stroke="white"/>
+                        <path d="M8 8l4-4 4 4" stroke="white"/>
+                    </svg>
+                    <span id="export-text-${tabName}">Export</span>
+                    <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
+                        <path d="M4 5h8l-4 6-4-6z" fill="white" stroke="none"></path>
+                    </svg>
+                    </button>
+                    <ul class="dropdown-menu" id="dropdown-menu-${tabName}">
+                        <li><span data-value="csv" class="dropdown-item">To CSV</span></li>
+                        <li><span data-value="excel" class="dropdown-item">To Excel</span></li>
+                        <li><span data-value="parquet" class="dropdown-item">To Parquet</span></li>
+                        <li><span data-value="json" class="dropdown-item">To JSON</span></li>
+                        <li><span data-value="ndjson" class="dropdown-item">To ndJSON</span></li>
+                    </ul>
+                </div>
+            </div>
+        `
+        return tableActionHtml
+    }
+
 
     private getHtmlForWebview(
         webview: vscode.Webview,
@@ -1186,66 +1275,7 @@ export class TabularDocumentEditorProvider
             queryActionsBodyHtml =
                 '<p>The loaded backend parquet-wasm does not support SQL.</p>'
         } else {
-            queryActionsBodyHtml = `
-              <div id="query-actions" class="button-container">
-                    <button id="run-query-btn" class="tabulator-page flex-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
-                            <polygon points="5,4 11,8 5,12" fill="none" stroke="#84CF85" stroke-width="1.5" />
-                        </svg>
-                        <span id="run-query-btn-text">Run</span>
-                    </button>
-                    <button id="clear-query-btn" class="tabulator-page flex-button">Clear</button>
-              </div>
-              <div id="editor"></div>
-              <div id="query-result-actions" class="button-container">
-                <div class="flex-button search-container" style="margin-right: auto;">
-                    <div class="search-icon-element">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" class="search-icon">
-                            <circle cx="7" cy="7" r="5"></circle>
-                            <path d="m15 15-4.5-4.5"></path>
-                        </svg>
-                    </div>
-                    <input class="search-box" id="input-filter-values" type="text" placeholder="Search rows" disabled>
-                    <div class="clear-icon-element" id="clear-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" class="clear-icon">
-                            <path d="m2 2 12 12M14 2 2 14" stroke="none"></path>
-                        </svg>
-                    </div>
-                </div>
-                
-                <button class="tabulator-page flex-button" disabled id="reset-sort-queryTab" type="button" role="button" aria-label="Reset Sort" title="Reset Sort">Reset Sort</button>
-
-                <button class="tabulator-page flex-button" disabled id="copy-query-results" type="button" role="button" aria-label="Copy page to clipboard" title="Copy page to clipboard">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" width="16" height="16" class="copy-icon">
-                      <path d="M2 5h9v9H2z" class="stroke-linejoin-round"></path>
-                      <path d="M5 5V2h9v9h-3" class="stroke-linejoin-round"></path>
-                  </svg>
-                  Copy page
-                </button>
-                
-                <div class="dropdown">
-                    <button class="flex-button" disabled id="export-query-results" type="button" role="button" aria-label="Export results" title="Export results">
-                      <svg class="export-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="16" rx="2" ry="2" fill="none" stroke="white"/>
-                        <path d="M12 5v12" stroke="white"/>
-                        <path d="M8 8l4-4 4 4" stroke="white"/>
-                      </svg>
-                      <span id="export-query-results-text">Export results</span>
-                      <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
-                          <path d="M4 5h8l-4 6-4-6z" fill="white" stroke="none"></path>
-                      </svg>
-                    </button>
-                    <ul class="dropdown-menu" id="dropdown-menu">
-                        <li><span data-value="csv" class="dropdown-item">To CSV</span></li>
-                        <li><span data-value="excel" class="dropdown-item">To Excel</span></li>
-                        <li><span data-value="parquet" class="dropdown-item">To Parquet</span></li>
-                        <li><span data-value="json" class="dropdown-item">To JSON</span></li>
-                        <li><span data-value="ndjson" class="dropdown-item">To ndJSON</span></li>
-                    </ul>
-                </div>
-              </div>
-              <div id="table-queryTab"></div>
-          `
+            queryActionsBodyHtml = this.createTableActionsHtml("queryTab", true)
         }
 
         const html = `
@@ -1301,17 +1331,24 @@ export class TabularDocumentEditorProvider
                       </div>
 
                       <div class="tab" id="query-tab-panel">
-                          <div id="query-tab-container">
+                        <div class="tab-container">
                             ${queryActionsBodyHtml}
-                          </div>
+                            <div id="table-queryTab"></div>
+                        </div>
                       </div>
                       
                       <div class="tab" id="data-tab-panel">
-                          <div id="table"></div>
+                        <div class="tab-container">
+                          ${this.createTableActionsHtml("dataTab", false)}
+                          <div id="table-dataTab"></div>
+                        </div>
                       </div>
                       
                       <div class="tab" id="schema-tab-panel">
-                          <div id="schema"></div>
+                        <div class="tab-container">
+                            ${this.createTableActionsHtml("schemaTab", false)}
+                            <div id="table-schemaTab"></div>
+                        </div>
                       </div>
                       
                       <div class="tab" id="metadata-tab-panel">
@@ -1319,6 +1356,16 @@ export class TabularDocumentEditorProvider
                       </div>
                   </div>
               </div>
+              <script nonce="{{nonce}}" src="{{scripts}}/tab-manager.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/tab.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/result-controls.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/editor-controls.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/editor.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/dropdown-menu.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/sort.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/pagination.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/search-box.js"></script>
+              <script nonce="{{nonce}}" src="{{scripts}}/table-wrapper.js"></script>
               <script nonce="{{nonce}}" src="{{scripts}}/main.js"></script>
           </body>
           </html>

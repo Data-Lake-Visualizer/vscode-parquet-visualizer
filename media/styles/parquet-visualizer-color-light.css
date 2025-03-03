@@ -1,50 +1,50 @@
-#table .tabulator-header .tabulator-col,
-#schema .tabulator-header .tabulator-col,
+#table-dataTab .tabulator-header .tabulator-col,
+#table-schemaTab .tabulator-header .tabulator-col,
 #metadata .tabulator-header .tabulator-col,
 #table-queryTab .tabulator-header .tabulator-col {
     background-color: var(--vscode-tab-inactiveBackground);
     color: #333333;
 }
 
-#table .tabulator-row,
-#schema .tabulator-row,
+#table-dataTab .tabulator-row,
+#table-schemaTab .tabulator-row,
 #metadata .tabulator-row,
 #table-queryTab .tabulator-row {
     color: #242424;
 }
 
-#table .tabulator-row-odd,
-#schema .tabulator-row-odd,
+#table-dataTab .tabulator-row-odd,
+#table-schemaTab .tabulator-row-odd,
 #metadata .tabulator-row-odd,
 #table-queryTab .tabulator-row-odd {
     background-color: var(--vscode-list-activeSelectionBackground);
 }
 
-#table .tabulator-row-even,
-#schema .tabulator-row-even,
+#table-dataTab .tabulator-row-even,
+#table-schemaTab .tabulator-row-even,
 #metadata .tabulator-row-even,
 #table-queryTab .tabulator-row-even {
     background-color: rgb(248, 248, 248);
 }
 
-#table .tabulator-footer *,
-#schema .tabulator-footer *,
+#table-dataTab .tabulator-footer *,
+#table-schemaTab .tabulator-footer *,
 #metadata .tabulator-footer *,
 #table-queryTab .tabulator-footer * {
     background-color: var(--vscode-tab-inactiveBackground);
     color: #242424;
 }
 
-#table .tabulator-footer .tabulator-page,
-#schema .tabulator-footer .tabulator-page,
+#table-dataTab .tabulator-footer .tabulator-page,
+#table-schemaTab .tabulator-footer .tabulator-page,
 #metadata .tabulator-footer .tabulator-page,
 #table-queryTab .tabulator-footer .tabulator-page {
     background-color: white;
     color: #242424;
 }
 
-#table .tabulator-footer .tabulator-page-size,
-#schema .tabulator-footer .tabulator-page-size,
+#table-dataTab .tabulator-footer .tabulator-page-size,
+#table-schemaTab .tabulator-footer .tabulator-page-size,
 #metadata .tabulator-footer .tabulator-page-size,
 #table-queryTab .tabulator-footer .tabulator-page-size {
     background-color: white;
@@ -61,12 +61,12 @@
     color: #242424;
 }
 
-#table ::-webkit-scrollbar-thumb:hover,
+#table-dataTab ::-webkit-scrollbar-thumb:hover,
 #table-queryTab ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(172, 172, 172, 1);
 }
 
-#table ::-webkit-scrollbar-thumb,
+#table-dataTab ::-webkit-scrollbar-thumb,
 #table-queryTab ::-webkit-scrollbar-thumb {
     background-color: rgba(60, 60, 60, 0.4);
 }

@@ -24,18 +24,21 @@ if (!parentPort) {
 }
 
 const QUERY_RESULT_TABLE_NAME = 'query_result'
+const FILTERED_QUERY_RESULT_TABLE_NAME = 'filtered_query_result'
 
 class QueryHelper {
     paginator: Paginator
     backend: DuckDBBackend
     rowCount: number
     tableName: string
+    filteredTableName: string
     tabName: string
     readFromFile: boolean
 
-    constructor(backend: DuckDBBackend, tableName: string, tabName: string) {
+    constructor(backend: DuckDBBackend, tabName: string) {
         this.backend = backend
-        this.tableName = tableName
+        this.tableName = QUERY_RESULT_TABLE_NAME
+        this.filteredTableName = FILTERED_QUERY_RESULT_TABLE_NAME
         this.tabName = tabName
         this.readFromFile = tabName === constants.REQUEST_SOURCE_DATA_TAB
     }
@@ -119,14 +122,17 @@ class QueryHelper {
     }
 
     async search(message: any) {
+        let schemaQuery = `
+        SELECT * FROM ${this.tableName}
+        `
         let query = `
-      SELECT * FROM query_result
-    `
+        CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
+        `
 
         const searchString = message.query.searchString
         if (searchString && searchString !== '') {
             const querySchemaResult = await this.backend.query(
-                `DESCRIBE ${query}`
+                `DESCRIBE ${schemaQuery}`
             )
             const whereClause = querySchemaResult
                 .map((col) =>
@@ -145,12 +151,29 @@ class QueryHelper {
       `
         }
 
-        const result = await this.backend.query(query)
+        await this.backend.query(query)
+
+        const queryResult = await this.backend.query(
+            `SELECT COUNT(*) AS count FROM ${this.filteredTableName}`
+        )
+
+        this.rowCount = Number(queryResult[0]['count'])
+
+        const readFromFile = false
+        this.paginator = new DuckDBPaginator(
+            this.backend,
+            this.filteredTableName,
+            this.rowCount,
+            readFromFile
+        )
+
+        const queryObject: QueryObject = {
+            pageNumber: 1,
+            pageSize: message.query.pageSize,
+        }
+
+        const result = await this.paginator.firstPage(queryObject)
         const values = replacePeriodWithUnderscoreInKey(result)
-        this.rowCount = values.length
-
-        this.paginator.totalItems = this.rowCount
-
         const headers = createHeadersFromData(values)
 
         return {
@@ -187,9 +210,23 @@ class QueryHelper {
         const exportType = message.exportType
         const savedPath = message.savedPath
 
+        let tableName;
+        if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
+            tableName = 'schema_result'
+            const query = `
+                CREATE TABLE ${tableName} AS SELECT * FROM (
+                    DESCRIBE SELECT * FROM ${this.backend.getReadFunctionByFileType()}('${this.backend.uri.fsPath}')
+                )
+            `
+            console.log(query)
+            await this.backend.query(query)
+        } else {
+            tableName = this.tableName
+        }
+
         let query = ''
         let subQuery = `
-      SELECT * FROM ${this.tableName}
+      SELECT * FROM ${tableName}
     `
 
         if (message.searchString && message.searchString !== '') {
@@ -226,7 +263,7 @@ class QueryHelper {
             const schemaQuery = `
           SELECT column_name, data_type
           FROM information_schema.columns
-          WHERE table_name = '${this.tableName}'
+          WHERE table_name = '${tableName}'
       `
             const schema = await this.backend.query(schemaQuery)
 
@@ -295,7 +332,6 @@ export class BackendWorker {
     private constructor(backend: DuckDBBackend, tabName: string) {
         this.queryHelper = new QueryHelper(
             backend,
-            QUERY_RESULT_TABLE_NAME,
             tabName
         )
     }

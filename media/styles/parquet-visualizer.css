@@ -14,16 +14,17 @@ body {
     flex-direction: column; /* Aligns children vertically */
 }
 
-#table,
-#schema,
+#table-dataTab,
+#table-schemaTab,
 #metadata {
     height: 100%;
 }
 
-#query-tab-container {
+.tab-container {
     height: 100%;
     display: flex; /* Using flexbox for easy alignment and distribution of children */
     flex-direction: column; /* Aligns children vertically */
+    overflow-x: hidden;
 }
 
 #editor {
@@ -33,7 +34,7 @@ body {
     box-sizing: border-box;
 }
 
-#query-result-actions {
+.table-actions {
     flex: 0 0 auto; /* Respects its height */
     min-height: 40px;
     max-height: 5%; /* Maximum height relative to the viewport */
