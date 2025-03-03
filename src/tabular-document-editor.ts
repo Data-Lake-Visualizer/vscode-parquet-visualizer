@@ -266,6 +266,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     private readonly _onError = this._register(
         new vscode.EventEmitter<{
+            readonly requestSource?: string
             readonly error?: string
         }>()
     )
@@ -275,8 +276,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
      */
     public readonly onError = this._onError.event
 
-    fireErrorEvent(error: string) {
+    fireErrorEvent(source: string, error: string) {
         this._onError.fire({
+            requestSource: source,
             error: error,
         })
     }
@@ -381,7 +383,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         } catch (e: unknown) {
             console.error(e)
             const error = e as DuckDbError
-            this.fireErrorEvent(error.message)
+            this.fireErrorEvent(
+                constants.REQUEST_SOURCE_QUERY_TAB,
+                error.message
+            )
             getLogger().error(error.message)
             vscode.window.showErrorMessage(error.message)
         }
@@ -510,7 +515,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             const errorMessage = `Export failed: ${error.message}`
             getLogger().error(error.message)
             vscode.window.showErrorMessage(errorMessage)
-            this.fireErrorEvent(errorMessage)
+            this.fireErrorEvent(
+                message.source,
+                errorMessage
+            )
         }
         return exportType
     }
@@ -612,6 +620,8 @@ export class TabularDocumentEditorProvider
                 for (const webviewPanel of this.webviews.get(document.uri)) {
                     this.postMessage(webviewPanel, 'error', {
                         type: 'error',
+                        source: e.requestSource,
+                        error: e.error,
                     })
                 }
             })

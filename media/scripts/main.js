@@ -318,10 +318,11 @@
 
     }
 
-    function handleError() {
-        console.log("handleError()");
-        // query error
-        // queryTable.editor?.editorControls.resetQueryControls()
+    function handleError(/** @type {string} */ source) {
+        // console.log(`handleError(source:${source})`);
+        const tab = tabManager.getTab(source)
+        tab?.editor.editorControls.reset()
+        tab?.tableWrapper.clearAlert()
     }
 
     function handleColorThemeChangeById(id, href) {
@@ -467,9 +468,8 @@
                 )
 
                 // Set ace theme
-                if (queryTable.editor) {
-                    queryTable.editor.setTheme(body.aceTheme)
-                }
+                const tab = tabManager.getTab(requestSourceQueryTab)
+                tab?.editor.setTheme(body.aceTheme)
                 break
             }
             case 'exportComplete': {
@@ -486,7 +486,7 @@
                 break
             }
             case 'error': {
-                handleError()
+                handleError(body.source)
                 break
             }
         }

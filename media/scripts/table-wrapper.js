@@ -52,30 +52,7 @@ class TableWrapper extends EventTarget {
         this.table.on('popupOpened', this.onPopupOpened)
 
         this.table.on('tableBuilt',  (data) => {
-            console.log(`table ${this.tab.name} built`)
-
             this.dispatchEvent(new CustomEvent('tableBuilt', { detail: data }));
-            // if (this.isQueryable) {
-            //     this.tab.sort.initialize()
-            //     this.tab.editor?.initialize()
-            // }
-
-            // if (this.isPagination) {
-            //     this.pagination.initialize()
-            // }
-
-            // if (this.isQueryable && this.editor){
-            //     this.editor.editorControls.resetQueryControls()
-            // }
-            // if (numRecordsDropDownResultTableHasChanged) {
-            //     const numRecordsDropdown = /** @type {HTMLSelectElement} */ (
-            //         document.querySelector(
-            //             `#dropdown-page-size-${requestSourceQueryTab}`
-            //         )
-            //     )
-            //     numRecordsDropdown.selectedIndex =
-            //         numRecordsDropdownSelectedIndex
-            // }
         })
     }
 
@@ -152,12 +129,10 @@ class TableWrapper extends EventTarget {
     }
 
     setAlert() {
-        // console.log(`set Alert(${this.tab.name})`)
         this.table.alert("Loading...")
     }
 
     clearAlert() {
-        // console.log(`clear Alert(${this.tab.name})`)
         this.table.clearAlert()
     }
 
