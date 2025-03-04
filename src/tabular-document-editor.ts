@@ -415,8 +415,6 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             searchString: message.query.searchString,
         }
 
-        console.log(workerMessage)
-
         await this.getPage(workerMessage)
     }
 

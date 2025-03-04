@@ -18,7 +18,7 @@ import {
 } from './util'
 import { DateTimeFormatSettings, SerializeableUri } from './types'
 import * as constants from './constants'
-import { getLogger } from './logger'
+// import { getLogger } from './logger'
 
 if (!parentPort) {
     throw new Error('InvalidWorker')
@@ -45,7 +45,7 @@ class QueryHelper {
     }
 
     async getPage(message: any) {
-        getLogger().info(`QueryHelper.getPage()`)
+        // getLogger().info(`QueryHelper.getPage()`)
         let query: QueryObject = {
             pageSize: message.pageSize,
             pageNumber: message.pageNumber,
@@ -79,7 +79,7 @@ class QueryHelper {
     }
 
     async query(queryObject: QueryObject) {
-        getLogger().info(`QueryHelper.query()`)
+        // getLogger().info(`QueryHelper.query()`)
         let query = this.formatQueryString(queryObject.queryString)
 
         await this.backend.query(
@@ -125,15 +125,26 @@ class QueryHelper {
     }
 
     async search(message: any) {
-        getLogger().info(`QueryHelper.search()`)
+        // getLogger().info(`QueryHelper.search()`)
         let schemaQuery = `
         SELECT * FROM ${this.tableName}
         `
-        let query = `
-        CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
-        `
-
         const searchString = message.query.searchString
+
+        let tableName = ''
+        let query = ''
+        if (searchString === undefined || searchString === ''){
+            tableName = this.tableName
+            query = schemaQuery
+        } else {
+            tableName = this.filteredTableName
+            query = `
+                CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
+            `
+                
+            }
+            
+
         if (searchString && searchString !== '') {
             const querySchemaResult = await this.backend.query(
                 `DESCRIBE ${schemaQuery}`
@@ -158,7 +169,7 @@ class QueryHelper {
         await this.backend.query(query)
 
         const queryResult = await this.backend.query(
-            `SELECT COUNT(*) AS count FROM ${this.filteredTableName}`
+            `SELECT COUNT(*) AS count FROM ${tableName}`
         )
 
         this.rowCount = Number(queryResult[0]['count'])
@@ -166,7 +177,7 @@ class QueryHelper {
         const readFromFile = false
         this.paginator = new DuckDBPaginator(
             this.backend,
-            this.filteredTableName,
+            tableName,
             this.rowCount,
             readFromFile
         )
@@ -188,7 +199,7 @@ class QueryHelper {
     }
 
     private async createEmptyExcelFile(filePath: string) {
-        getLogger().info(`QueryHelper.createEmptyExcelFile()`)
+        // getLogger().info(`QueryHelper.createEmptyExcelFile()`)
         const workbook = new exceljs.Workbook()
         workbook.addWorksheet('Sheet1')
 
@@ -212,7 +223,7 @@ class QueryHelper {
     }
 
     async export(message: any) {
-        getLogger().info(`QueryHelper.export()`)
+        // getLogger().info(`QueryHelper.export()`)
         const exportType = message.exportType
         const savedPath = message.savedPath
 
@@ -224,7 +235,6 @@ class QueryHelper {
                     DESCRIBE SELECT * FROM ${this.backend.getReadFunctionByFileType()}('${this.backend.uri.fsPath}')
                 )
             `
-            console.log(query)
             await this.backend.query(query)
         } else {
             tableName = this.tableName
@@ -347,7 +357,7 @@ export class BackendWorker {
         serializeableUri: SerializeableUri,
         dateTimeFormatSettings: DateTimeFormatSettings
     ) {
-        getLogger().info(`BackendWorker.create()`)
+        // getLogger().info(`BackendWorker.create()`)
         const path = `${serializeableUri.scheme}://${serializeableUri.path}`
         const uri = URI.parse(path, true)
         const backend = await DuckDBBackend.createAsync(
@@ -360,7 +370,7 @@ export class BackendWorker {
     }
 
     public exit(): void {
-        getLogger().info(`BackendWorker.exit()`)
+        // getLogger().info(`BackendWorker.exit()`)
         return process.exit()
     }
 
@@ -392,7 +402,7 @@ export class BackendWorker {
     }
 
     async search(message: any) {
-        getLogger().info(`BackendWorker.search()`)
+        // getLogger().info(`BackendWorker.search()`)
         const { headers, result, rowCount } =
             await this.queryHelper.search(message)
 
@@ -415,7 +425,7 @@ export class BackendWorker {
     }
 
     async getPage(message: any) {
-        getLogger().info(`BackendWorker.getPage()`)
+        // getLogger().info(`BackendWorker.getPage()`)
         const { headers, result, rowCount } =
             await this.queryHelper.getPage(message)
 
@@ -432,7 +442,7 @@ export class BackendWorker {
     }
 
     async export(message: any) {
-        getLogger().info(`BackendWorker.export()`)
+        // getLogger().info(`BackendWorker.export()`)
         const exportPath = await this.queryHelper.export(message)
         return {
             type: 'exportQueryResults',

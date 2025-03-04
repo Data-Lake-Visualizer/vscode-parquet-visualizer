@@ -45,13 +45,17 @@ class Sort {
     }
 
     onSort(/** @type {any}*/ query) {
+        // console.log(`onSort{${query}}`)
         const resetSortButton = document.querySelector(
             `#reset-sort-${this.tab.name}`
         )
         resetSortButton?.removeAttribute('disabled')
 
         const selectedOption = this.tab.pagination.getSelectedPageSize()
-        // const queryString = getTextFromEditor(aceEditor)
+        let queryString = undefined
+        if (this.tab.editor) {
+            queryString = this.tab.editor.getTextFromEditor()
+        }
 
         const sortObject = query
             ? {
@@ -70,16 +74,18 @@ class Sort {
             selectedOptionValue === 'all' ? undefined : selectedOptionValue
 
         // TODO: Somehow get this message from a class.
+        const msgQuery = {
+            queryString: queryString,
+            pageNumber: this.tab.pagination.pageNumber,
+            pageSize: pageSize,
+            sort: sortObject,
+            searchString: searchString,
+        }
+        console.log(msgQuery)
         this.tab.vscode.postMessage({
             type: 'onSort',
             source: this.tab.name,
-            query: {
-                // queryString: queryString,
-                pageNumber: this.tab.pagination.pageNumber,
-                pageSize: pageSize,
-                sort: sortObject,
-                searchString: searchString,
-            },
+            query: msgQuery,
         })
     }
 
