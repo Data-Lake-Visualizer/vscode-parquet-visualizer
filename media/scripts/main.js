@@ -204,7 +204,7 @@
                 return 0
             },
             cellClick: onCellClick,
-            headerTooltip: true
+            headerTooltip: true,
         }))
 
         const footerHTML = queryTab?.pagination.getFooterHTML()
@@ -222,17 +222,17 @@
     function initMetaDataTab(/** @type {any} */ data) {
         const columns = [
             // {title:"#", field:"index", width: 150},
-            { 
-                title: 'Key', 
-                field: 'key', 
+            {
+                title: 'Key',
+                field: 'key',
                 width: 200,
-                headerTooltip: true
+                headerTooltip: true,
             },
-            { 
-                title: 'Value', 
-                field: 'value', 
+            {
+                title: 'Value',
+                field: 'value',
                 width: 500,
-                headerTooltip: true
+                headerTooltip: true,
             },
         ]
         metadataTable = new Tabulator('#metadata', {
@@ -257,37 +257,37 @@
         })
 
         const columns = [
-            { 
-                title: '#', 
-                field: 'index', 
+            {
+                title: '#',
+                field: 'index',
                 width: 50,
-                headerTooltip: true
+                headerTooltip: true,
             },
             {
                 title: 'Column name',
                 field: 'name',
                 width: 150,
                 cellClick: onCellClick,
-                headerTooltip: true
+                headerTooltip: true,
             },
             {
                 title: 'Data type',
                 field: 'type',
                 width: 150,
                 cellClick: onCellClick,
-                headerTooltip: true
+                headerTooltip: true,
             },
-            { 
-                title: 'Nullable', 
-                field: 'nullable', 
+            {
+                title: 'Nullable',
+                field: 'nullable',
                 width: 150,
-                headerTooltip: true
+                headerTooltip: true,
             },
-            { 
-                title: 'Metadata', 
-                field: 'metadata', 
+            {
+                title: 'Metadata',
+                field: 'metadata',
                 width: 150,
-                headerTooltip: true
+                headerTooltip: true,
             },
         ]
 
@@ -330,7 +330,7 @@
                 },
             }),
             cellClick: onCellClick,
-            headerTooltip: true
+            headerTooltip: true,
         }))
 
         const footerHTML = dataTab?.pagination.getFooterHTML()

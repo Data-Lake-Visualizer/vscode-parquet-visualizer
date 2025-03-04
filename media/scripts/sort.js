@@ -81,7 +81,7 @@ class Sort {
             sort: sortObject,
             searchString: searchString,
         }
-        
+
         this.tab.vscode.postMessage({
             type: 'onSort',
             source: this.tab.name,
