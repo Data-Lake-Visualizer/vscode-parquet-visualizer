@@ -1,3 +1,10 @@
+# [0.27.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.26.0...v0.27.0) (2025-03-04)
+
+
+### Features
+
+* add tooltip columns on hover ([a24ac3b](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/a24ac3b756b3002fb6c6e6d7e003161adcc0ee4f))
+
 # [0.26.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.2...v0.26.0) (2025-03-04)
 
 
