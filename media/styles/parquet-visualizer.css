@@ -14,16 +14,17 @@ body {
     flex-direction: column; /* Aligns children vertically */
 }
 
-#table,
-#schema,
+#table-dataTab,
+#table-schemaTab,
 #metadata {
     height: 100%;
 }
 
-#query-tab-container {
+.tab-container {
     height: 100%;
     display: flex; /* Using flexbox for easy alignment and distribution of children */
     flex-direction: column; /* Aligns children vertically */
+    overflow-x: hidden;
 }
 
 #editor {
@@ -33,7 +34,7 @@ body {
     box-sizing: border-box;
 }
 
-#query-result-actions {
+.table-actions {
     flex: 0 0 auto; /* Respects its height */
     min-height: 40px;
     max-height: 5%; /* Maximum height relative to the viewport */
@@ -80,39 +81,18 @@ body {
         flex: 1; /* Dynamically fill remaining space */
     }
 
-    #copy-query-results {
-        display: flex;
-        align-items: center; /* Ensures proper alignment */
-        justify-content: center; /* Centers the SVG */
-    }
-
-    #copy-query-results::after {
-        display: none; /* If text is added via pseudo-elements, ensure it is hidden */
-    }
-
-    #copy-query-results svg {
-        margin-right: 0; /* Removes any spacing if present */
-    }
-
-    #copy-query-results {
-        font-size: 0; /* Hides text by collapsing its space */
-    }
-
-    #export-query-results {
+    .table-actions .flex-button {
         display: flex;
         align-items: center; /* Aligns icons properly */
         justify-content: center; /* Centers content in the button */
-    }
-
-    #export-query-results {
         font-size: 0; /* Hides the button text */
     }
 
-    #export-query-results svg {
+    .table-actions .flex-button svg {
         font-size: initial; /* Ensures SVGs remain visible */
     }
 
-    #export-query-results .dropdown-icon {
+    .table-actions .flex-button .dropdown-icon {
         margin-left: 4px; /* Adds slight spacing between icons */
     }
 }

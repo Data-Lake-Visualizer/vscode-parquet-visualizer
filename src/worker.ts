@@ -18,29 +18,34 @@ import {
 } from './util'
 import { DateTimeFormatSettings, SerializeableUri } from './types'
 import * as constants from './constants'
+// import { getLogger } from './logger'
 
 if (!parentPort) {
     throw new Error('InvalidWorker')
 }
 
 const QUERY_RESULT_TABLE_NAME = 'query_result'
+const FILTERED_QUERY_RESULT_TABLE_NAME = 'filtered_query_result'
 
 class QueryHelper {
     paginator: Paginator
     backend: DuckDBBackend
     rowCount: number
     tableName: string
+    filteredTableName: string
     tabName: string
     readFromFile: boolean
 
-    constructor(backend: DuckDBBackend, tableName: string, tabName: string) {
+    constructor(backend: DuckDBBackend, tabName: string) {
         this.backend = backend
-        this.tableName = tableName
+        this.tableName = QUERY_RESULT_TABLE_NAME
+        this.filteredTableName = FILTERED_QUERY_RESULT_TABLE_NAME
         this.tabName = tabName
         this.readFromFile = tabName === constants.REQUEST_SOURCE_DATA_TAB
     }
 
     async getPage(message: any) {
+        // getLogger().info(`QueryHelper.getPage()`)
         let query: QueryObject = {
             pageSize: message.pageSize,
             pageNumber: message.pageNumber,
@@ -74,6 +79,7 @@ class QueryHelper {
     }
 
     async query(queryObject: QueryObject) {
+        // getLogger().info(`QueryHelper.query()`)
         let query = this.formatQueryString(queryObject.queryString)
 
         await this.backend.query(
@@ -119,14 +125,27 @@ class QueryHelper {
     }
 
     async search(message: any) {
-        let query = `
-      SELECT * FROM query_result
-    `
-
+        // getLogger().info(`QueryHelper.search()`)
+        let schemaQuery = `
+        SELECT * FROM ${this.tableName}
+        `
         const searchString = message.query.searchString
+
+        let tableName = ''
+        let query = ''
+        if (searchString === undefined || searchString === '') {
+            tableName = this.tableName
+            query = schemaQuery
+        } else {
+            tableName = this.filteredTableName
+            query = `
+                CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
+            `
+        }
+
         if (searchString && searchString !== '') {
             const querySchemaResult = await this.backend.query(
-                `DESCRIBE ${query}`
+                `DESCRIBE ${schemaQuery}`
             )
             const whereClause = querySchemaResult
                 .map((col) =>
@@ -145,12 +164,29 @@ class QueryHelper {
       `
         }
 
-        const result = await this.backend.query(query)
+        await this.backend.query(query)
+
+        const queryResult = await this.backend.query(
+            `SELECT COUNT(*) AS count FROM ${tableName}`
+        )
+
+        this.rowCount = Number(queryResult[0]['count'])
+
+        const readFromFile = false
+        this.paginator = new DuckDBPaginator(
+            this.backend,
+            tableName,
+            this.rowCount,
+            readFromFile
+        )
+
+        const queryObject: QueryObject = {
+            pageNumber: 1,
+            pageSize: message.query.pageSize,
+        }
+
+        const result = await this.paginator.firstPage(queryObject)
         const values = replacePeriodWithUnderscoreInKey(result)
-        this.rowCount = values.length
-
-        this.paginator.totalItems = this.rowCount
-
         const headers = createHeadersFromData(values)
 
         return {
@@ -161,6 +197,7 @@ class QueryHelper {
     }
 
     private async createEmptyExcelFile(filePath: string) {
+        // getLogger().info(`QueryHelper.createEmptyExcelFile()`)
         const workbook = new exceljs.Workbook()
         workbook.addWorksheet('Sheet1')
 
@@ -184,12 +221,26 @@ class QueryHelper {
     }
 
     async export(message: any) {
+        // getLogger().info(`QueryHelper.export()`)
         const exportType = message.exportType
         const savedPath = message.savedPath
 
+        let tableName
+        if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
+            tableName = 'schema_result'
+            const query = `
+                CREATE TABLE ${tableName} AS SELECT * FROM (
+                    DESCRIBE SELECT * FROM ${this.backend.getReadFunctionByFileType()}('${this.backend.uri.fsPath}')
+                )
+            `
+            await this.backend.query(query)
+        } else {
+            tableName = this.tableName
+        }
+
         let query = ''
         let subQuery = `
-      SELECT * FROM ${this.tableName}
+      SELECT * FROM ${tableName}
     `
 
         if (message.searchString && message.searchString !== '') {
@@ -226,7 +277,7 @@ class QueryHelper {
             const schemaQuery = `
           SELECT column_name, data_type
           FROM information_schema.columns
-          WHERE table_name = '${this.tableName}'
+          WHERE table_name = '${tableName}'
       `
             const schema = await this.backend.query(schemaQuery)
 
@@ -293,11 +344,7 @@ export class BackendWorker {
     queryHelper: QueryHelper
 
     private constructor(backend: DuckDBBackend, tabName: string) {
-        this.queryHelper = new QueryHelper(
-            backend,
-            QUERY_RESULT_TABLE_NAME,
-            tabName
-        )
+        this.queryHelper = new QueryHelper(backend, tabName)
     }
 
     static async create(
@@ -305,6 +352,7 @@ export class BackendWorker {
         serializeableUri: SerializeableUri,
         dateTimeFormatSettings: DateTimeFormatSettings
     ) {
+        // getLogger().info(`BackendWorker.create()`)
         const path = `${serializeableUri.scheme}://${serializeableUri.path}`
         const uri = URI.parse(path, true)
         const backend = await DuckDBBackend.createAsync(
@@ -317,6 +365,7 @@ export class BackendWorker {
     }
 
     public exit(): void {
+        // getLogger().info(`BackendWorker.exit()`)
         return process.exit()
     }
 
@@ -348,6 +397,7 @@ export class BackendWorker {
     }
 
     async search(message: any) {
+        // getLogger().info(`BackendWorker.search()`)
         const { headers, result, rowCount } =
             await this.queryHelper.search(message)
 
@@ -370,6 +420,7 @@ export class BackendWorker {
     }
 
     async getPage(message: any) {
+        // getLogger().info(`BackendWorker.getPage()`)
         const { headers, result, rowCount } =
             await this.queryHelper.getPage(message)
 
@@ -386,6 +437,7 @@ export class BackendWorker {
     }
 
     async export(message: any) {
+        // getLogger().info(`BackendWorker.export()`)
         const exportPath = await this.queryHelper.export(message)
         return {
             type: 'exportQueryResults',

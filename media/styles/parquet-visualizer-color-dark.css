@@ -1,34 +1,34 @@
-#table .tabulator-header .tabulator-col,
-#schema .tabulator-header .tabulator-col,
+#table-dataTab .tabulator-header .tabulator-col,
+#table-schemaTab .tabulator-header .tabulator-col,
 #metadata .tabulator-header .tabulator-col,
 #table-queryTab .tabulator-header .tabulator-col {
     background-color: #080808;
     color: #d4d4d4;
 }
 
-#table .tabulator-row,
-#schema .tabulator-row,
+#table-dataTab .tabulator-row,
+#table-schemaTab .tabulator-row,
 #metadata .tabulator-row,
 #table-queryTab .tabulator-row {
     color: #d4d4d4;
 }
 
-#table .tabulator-row-odd,
-#schema .tabulator-row-odd,
+#table-dataTab .tabulator-row-odd,
+#table-schemaTab .tabulator-row-odd,
 #metadata .tabulator-row-odd,
 #table-queryTab .tabulator-row-odd {
     background-color: #151515;
 }
 
-#table .tabulator-row-even,
-#schema .tabulator-row-even,
+#table-dataTab .tabulator-row-even,
+#table-schemaTab .tabulator-row-even,
 #metadata .tabulator-row-even,
 #table-queryTab .tabulator-row-even {
     background-color: #202020;
 }
 
-#table .tabulator-footer *,
-#schema .tabulator-footer *,
+#table-dataTab .tabulator-footer *,
+#table-schemaTab .tabulator-footer *,
 #metadata .tabulator-footer *,
 #table-queryTab .tabulator-footer * {
     background-color: #101010;
@@ -53,12 +53,12 @@
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
-#table ::-webkit-scrollbar-thumb:hover,
+#table-dataTab ::-webkit-scrollbar-thumb:hover,
 #table-queryTab ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(172, 172, 172, 1);
 }
 
-#table ::-webkit-scrollbar-thumb,
+#table-dataTab ::-webkit-scrollbar-thumb,
 #table-queryTab ::-webkit-scrollbar-thumb {
     background-color: rgba(60, 60, 60, 0.4);
 }
@@ -108,4 +108,8 @@
 
 .dropdown-menu li span:hover {
     font-weight: bolder;
+}
+
+.reset-sort-icon {
+    stroke: #ffffff;
 }
