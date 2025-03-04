@@ -1,3 +1,10 @@
+# [0.26.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.2...v0.26.0) (2025-03-04)
+
+
+### Features
+
+* add search, copy, export to data and schema tab ([5a05149](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/5a0514956a641daf26b61dcb3c4dffd38d035d13))
+
 ## [0.25.2](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.25.1...v0.25.2) (2025-02-10)
 
 
