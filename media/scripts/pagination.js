@@ -1,8 +1,5 @@
 class Pagination {
-    constructor(
-        /** @type {Tab} */ tab,
-        /** @type {any} */ parameters,
-    ) {
+    constructor(/** @type {Tab} */ tab, /** @type {any} */ parameters) {
         this.tab = tab
 
         this.enabled = parameters.enabled
@@ -26,7 +23,7 @@ class Pagination {
         return numRecordsDropdown.options[selectedIndex]
     }
 
-    initialize(){
+    initialize() {
         // console.log(`initializeFooter(rowCount:${this.rowCount}, requestSource:${this.tabName})`);
 
         const nextButton = /** @type {HTMLElement} */ (
@@ -128,7 +125,7 @@ class Pagination {
             )
 
             this.tab.tableWrapper.setAlert()
-            
+
             this.pageNumber = this.pageCount
 
             this.tab.vscode.postMessage({
@@ -159,7 +156,9 @@ class Pagination {
                         : getSelectedPageSize
 
                 const filterValueInput = /** @type {HTMLElement} */ (
-                    document.querySelector(`#input-filter-values-${this.tab.name}`)
+                    document.querySelector(
+                        `#input-filter-values-${this.tab.name}`
+                    )
                 )
 
                 // https://stackoverflow.com/questions/61809200/default-page-number-on-page-size-change
@@ -168,9 +167,7 @@ class Pagination {
                 if (pageSize === undefined) {
                     this.pageNumber = 1
                 } else {
-                    this.calcNewPagePageNumerOnPageSizeChange(
-                        Number(pageSize),
-                    )
+                    this.calcNewPagePageNumerOnPageSizeChange(Number(pageSize))
                     this.pageSize = Number(pageSize)
                 }
                 this.tab.vscode.postMessage({
@@ -202,11 +199,10 @@ class Pagination {
         return html
     }
 
-    getFooterHTML(){
+    getFooterHTML() {
         if (!this.enabled) {
             return undefined
-        }
-        else {
+        } else {
             const options = this.createOptionHTMLElementsString()
             const footerElement = `<span id="page-counter-${this.tab.name}" class="tabulator-page-counter">
                         <span>
@@ -233,9 +229,7 @@ class Pagination {
         }
     }
 
-    updateNavigationButtonsState(
-        /** @type {Number} */ amountOfPages,
-    ) {
+    updateNavigationButtonsState(/** @type {Number} */ amountOfPages) {
         // console.log(`updateNavigationButtonsState(${currentPage}, ${amountOfPages}, ${requestSource})`);
 
         const nextButton = /** @type {HTMLElement} */ (
@@ -279,18 +273,16 @@ class Pagination {
         }
     }
 
-    updatePageCounterState(
-        /** @type {Number} */ pageCount,
-    ) {
+    updatePageCounterState(/** @type {Number} */ pageCount) {
         // console.log(`updatePageCounterState(pageCount:${pageCount})`);
 
         const pageCounterSpan = /** @type {HTMLElement} */ (
             document.querySelector(`#page-counter-${this.tab.name}`)
         )
         if (pageCount == 0) {
-            pageCounterSpan.style.display = 'none' 
+            pageCounterSpan.style.display = 'none'
         } else {
-            pageCounterSpan.style.display = 'block' 
+            pageCounterSpan.style.display = 'block'
         }
 
         const currentPageSpan = /** @type {HTMLElement} */ (
@@ -299,7 +291,6 @@ class Pagination {
         const countPageSpan = /** @type {HTMLElement} */ (
             document.querySelector(`#page-count-${this.tab.name}`)
         )
-
 
         if (this.isQueryable) {
             if (!currentPageSpan && !countPageSpan) {
@@ -313,19 +304,14 @@ class Pagination {
         }
     }
 
-    updateResultCount(
-        /** @type {Number} */ rowCount
-    ) {
+    updateResultCount(/** @type {Number} */ rowCount) {
         if (this.tab.name === NAME_QUERY_TAB) {
             const resultsCountElement = document.getElementById('query-count')
             resultsCountElement.innerHTML = `<strong>Results</strong> (${rowCount})&nbsp;`
         }
     }
 
-
-    calcNewPagePageNumerOnPageSizeChange(
-        /** @type {Number} */ newPageSize,
-    ) {
+    calcNewPagePageNumerOnPageSizeChange(/** @type {Number} */ newPageSize) {
         // console.log(`calcNewPagePageNumerOnPageSizeChange(${newPageSize})`)
         let nextPageNumber
         if (newPageSize === undefined) {
@@ -335,10 +321,9 @@ class Pagination {
             const firstItemIndex = (this.pageNumber - 1) * this.pageSize
 
             // Calculate the new page number
-            nextPageNumber =
-                Math.floor(firstItemIndex / newPageSize) + 1
-            
-                this.pageNumber = nextPageNumber
+            nextPageNumber = Math.floor(firstItemIndex / newPageSize) + 1
+
+            this.pageNumber = nextPageNumber
         }
     }
 }

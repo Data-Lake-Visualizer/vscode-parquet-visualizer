@@ -1,9 +1,8 @@
-class EditorControls{
+class EditorControls {
     constructor(/** @type {Tab} */ tab) {
         this.tab = tab
 
         this.isQueryRunning = false
-
     }
 
     initialize() {

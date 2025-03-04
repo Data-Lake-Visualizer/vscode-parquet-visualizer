@@ -1,9 +1,9 @@
-class ResultControls{
+class ResultControls {
     constructor(
         /** @type {Tab} */ tab,
         /** @type {DropdownMenu} */ exportDropdownMenu,
-        /** @type {SearchBox} */ searchBox,
-    ){
+        /** @type {SearchBox} */ searchBox
+    ) {
         this.tab = tab
 
         /** @type {DropdownMenu} */ this.exportDropdownMenu = exportDropdownMenu
@@ -12,7 +12,7 @@ class ResultControls{
         /** @type {any} */ this.resetSortButton
     }
 
-    initialize(){
+    initialize() {
         this.searchBox.initialize()
         this.exportDropdownMenu.initialize()
 
@@ -24,7 +24,7 @@ class ResultControls{
             this.tab.tableWrapper.table.copyToClipboard('table')
             this.tab.vscode.postMessage({
                 type: 'copyResults',
-                tabName: this.tab.name
+                tabName: this.tab.name,
             })
         })
 
@@ -34,12 +34,11 @@ class ResultControls{
         )
         this.resetSortButton.addEventListener('click', () => {
             this.tab.tableWrapper.table.clearSort()
-            
-            if (this.tab.sort){
+
+            if (this.tab.sort) {
                 const sortQuery = undefined
                 this.tab.sort.onSort(sortQuery)
             }
-
         })
     }
 }

@@ -1,6 +1,6 @@
-class TabManager{
+class TabManager {
     constructor() {
-        /** @type {Map<string, Tab>} */  this.tabs = new Map();
+        /** @type {Map<string, Tab>} */ this.tabs = new Map()
 
         document
             .getElementById('query-tab')
@@ -19,17 +19,12 @@ class TabManager{
     createTab(
         /** @type {string} */ selector,
         /** @type {string} */ tabName,
-        /** @type {any} */ vscode,
+        /** @type {any} */ vscode
     ) {
         if (!this.tabs.has(tabName)) {
-            const tab = new Tab(
-                selector,
-                tabName,
-                vscode
-            );
+            const tab = new Tab(selector, tabName, vscode)
             this.tabs.set(tabName, tab)
         }
-        
     }
 
     getTab(/** @type {string} */ name) {

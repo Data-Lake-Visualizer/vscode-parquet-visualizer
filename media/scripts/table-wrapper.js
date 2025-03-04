@@ -1,33 +1,27 @@
 const NAME_QUERY_TAB = 'queryTab'
 
 class TableWrapper extends EventTarget {
-    constructor(
-        /** @type {Tab} */ tab,
-        /** @type {any} */ parameters,
-    ) {
-        super();
+    constructor(/** @type {Tab} */ tab, /** @type {any} */ parameters) {
+        super()
         this.tab = tab
 
         this.schema = parameters.schema
 
         this.table = null
         // Bind the method to the instance
-        this.onPopupOpened = this.onPopupOpened.bind(this);
-        this.copyPageHandler = this.copyPageHandler.bind(this);
+        this.onPopupOpened = this.onPopupOpened.bind(this)
+        this.copyPageHandler = this.copyPageHandler.bind(this)
 
-        this.events = {};
-
+        this.events = {}
     }
-
 
     build(
         /** @type {Array<any>}*/ data = [],
         /** @type {Array<any>} */ columns,
-        /** @type {string | undefined} */ footerHTML,
-
-    ){        
+        /** @type {string | undefined} */ footerHTML
+    ) {
         this.table = new Tabulator(this.tab.selector, {
-            placeholder: "No Data Available",
+            placeholder: 'No Data Available',
             data: data,
             columns: columns,
             headerSortClickElement: 'icon',
@@ -51,8 +45,8 @@ class TableWrapper extends EventTarget {
 
         this.table.on('popupOpened', this.onPopupOpened)
 
-        this.table.on('tableBuilt',  (data) => {
-            this.dispatchEvent(new CustomEvent('tableBuilt', { detail: data }));
+        this.table.on('tableBuilt', (data) => {
+            this.dispatchEvent(new CustomEvent('tableBuilt', { detail: data }))
         })
     }
 
@@ -69,7 +63,7 @@ class TableWrapper extends EventTarget {
             HTMLTable.querySelectorAll('tr').forEach((tr) => {
                 tr.removeAttribute('class')
             })
-            
+
             HTMLTable.querySelectorAll('td').forEach((td) => {
                 const type = this.schema[td.cellIndex].column_type
                 // Check for numbers with leading zeros
@@ -100,8 +94,7 @@ class TableWrapper extends EventTarget {
                 }
             })
 
-            const completeDoc =
-                document.implementation.createHTMLDocument()
+            const completeDoc = document.implementation.createHTMLDocument()
             const style = completeDoc.createElement('style')
             style.textContent = `
                 th { font-weight: normal; }
@@ -123,13 +116,12 @@ class TableWrapper extends EventTarget {
         return output
     }
 
-
-    replaceData (/** @type {any}*/ data) {
+    replaceData(/** @type {any}*/ data) {
         this.table.replaceData(data)
     }
 
     setAlert() {
-        this.table.alert("Loading...")
+        this.table.alert('Loading...')
     }
 
     clearAlert() {
@@ -151,15 +143,13 @@ class TableWrapper extends EventTarget {
             style.width = '400px'
             style.overflowX = 'auto'
         } else {
-
-            function containsHTML(/** @type {string}*/  str) {
+            function containsHTML(/** @type {string}*/ str) {
                 const htmlTagRegex = /<\/?[a-z][\s\S]*>/i // Matches opening or closing HTML tags
                 return htmlTagRegex.test(str)
             }
 
             innerHTML = cellValue
             if (containsHTML(innerHTML)) {
-
                 function escapeHtml(/** @type {string}*/ htmlString) {
                     return htmlString
                         .replace(/&/g, '&amp;')

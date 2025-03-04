@@ -26,12 +26,12 @@
     )
 
     let metadataTable
-    
+
     let isQueryAble = false
     let defaultPageSizes
     let settingsAceEditor
 
-    function initialize(/** @type {any} */ tableData){
+    function initialize(/** @type {any} */ tableData) {
         if (tableData) {
             isQueryAble = tableData.isQueryAble
             defaultPageSizes = tableData.settings.defaultPageSizes
@@ -57,9 +57,8 @@
                 // // NOTE: Make sure data tab is clicked if parquet-wasm
                 document.getElementById('data-tab')?.click()
             } else {
-                
                 initQueryTab(
-                    tableData.rawData, 
+                    tableData.rawData,
                     tableData.headers,
                     tableData.pageCount,
                     tableData.rowCount,
@@ -92,7 +91,6 @@
 
         cell.popup(popupValue, 'center')
     }
-
 
     function onPopupOpenedMetaDataTab(component) {
         const parentContainerId = 'metadata'
@@ -172,7 +170,6 @@
         // TODO: What if child.left < parent. left?
     }
 
-
     function initQueryTab(
         /** @type {any} */ data,
         /** @type {any} */ headers,
@@ -180,24 +177,24 @@
         /** @type {number} */ rowCount,
         /** @type {any} */ defaultPageSizes,
         /** @type {any} */ schemaQueryResult,
-        /** @type {any} */ editorSettings,
+        /** @type {any} */ editorSettings
     ) {
         const queryTab = tabManager.getTab(requestSourceQueryTab)
         queryTab?.addTable({
-            schema: schemaQueryResult
+            schema: schemaQueryResult,
         })
 
         queryTab?.addEditor(editorSettings)
 
         queryTab?.addResultControls({
-            search: "remote"
+            search: 'remote',
         })
         queryTab?.addPagination({
             enabled: true,
             defaultPageSizes: defaultPageSizes,
             pageCount: pageCount,
             rowCount: rowCount,
-            isQueryAble: isQueryAble
+            isQueryAble: isQueryAble,
         })
         queryTab?.addSortFunctionality()
 
@@ -218,8 +215,7 @@
             queryTab?.resultControls.initialize()
             queryTab?.pagination?.initialize()
             queryTab?.sort.initialize()
-        });
-
+        })
     }
 
     function initMetaDataTab(/** @type {any} */ data) {
@@ -237,13 +233,16 @@
         metadataTable.on('popupOpened', onPopupOpenedMetaDataTab)
     }
 
-    function initSchemaTab(/** @type {any} */ data, /** @type {any} */ schemaQueryResult) {      
+    function initSchemaTab(
+        /** @type {any} */ data,
+        /** @type {any} */ schemaQueryResult
+    ) {
         const schemaTab = tabManager.getTab(requestSourceSchemaTab)
         schemaTab?.addTable({
-            schema: schemaQueryResult
+            schema: schemaQueryResult,
         })
         schemaTab?.addResultControls({
-            search: "local"
+            search: 'local',
         })
 
         const columns = [
@@ -268,9 +267,8 @@
 
         schemaTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
             schemaTab?.resultControls.initialize()
-        });
+        })
     }
-
 
     function initDataTab(
         /** @type {any} */ data,
@@ -278,21 +276,21 @@
         /** @type {number} */ pageCount,
         /** @type {number} */ rowCount,
         /** @type {any} */ defaultPageSizes,
-        /** @type {any} */ schemaQueryResult,
+        /** @type {any} */ schemaQueryResult
     ) {
         const dataTab = tabManager.getTab(requestSourceDataTab)
         dataTab?.addTable({
-            schema: schemaQueryResult
+            schema: schemaQueryResult,
         })
         dataTab?.addResultControls({
-            search: "remote"
+            search: 'remote',
         })
         dataTab?.addPagination({
             enabled: true,
             defaultPageSizes: defaultPageSizes,
             pageCount: pageCount,
             rowCount: rowCount,
-            isQueryAble: isQueryAble
+            isQueryAble: isQueryAble,
         })
         dataTab?.addSortFunctionality()
 
@@ -314,8 +312,7 @@
             dataTab?.resultControls.initialize()
             dataTab?.pagination?.initialize()
             dataTab?.sort.initialize()
-        });
-
+        })
     }
 
     function handleError(/** @type {string} */ source) {
@@ -355,15 +352,12 @@
             tab?.tableWrapper.replaceData(data)
             tab?.tableWrapper.clearAlert()
             tab?.editor?.editorControls.reset()
-
         } else if (requestType === 'paginator') {
-
             tab.pagination.rowCount = rowCount
             tab.pagination.pageCount = pageCount
 
             tab?.tableWrapper.replaceData(data)
             tab?.tableWrapper.clearAlert()
-
         } else if (requestType === 'search') {
             tab.pagination.rowCount = rowCount
             tab.pagination.pageCount = pageCount
@@ -374,10 +368,7 @@
         }
     }
 
-
-    function updateResultCount(
-        /** @type {Number} */ rowCount
-    ) {
+    function updateResultCount(/** @type {Number} */ rowCount) {
         // queryTable.pagination.updateResultCount(rowCount)
     }
 
@@ -417,7 +408,6 @@
         }
     }
 
-
     // Handle messages from the extension
     window.addEventListener('message', async (e) => {
         // console.log(e.data);
@@ -450,10 +440,7 @@
                         tableData.pageCount,
                         tableData.requestSource
                     )
-                    updateResultCount(
-                        tableData.rowCount
-                    )
-                    
+                    updateResultCount(tableData.rowCount)
                 }
                 break
             }

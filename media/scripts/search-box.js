@@ -2,17 +2,14 @@ const MIN_SEARCH_INPUT_WAIT = 200 // 0.1 seconds
 const MAX_SEARCH_INPUT_WAIT = 800 // 0.8 seconds
 
 class SearchBox {
-    constructor (
-        /** @type {Tab} */ tab,
-    ) {
+    constructor(/** @type {Tab} */ tab) {
         this.tab = tab
 
         this.minSearchInputTimeout = null
         this.maxSearchInputTimeout = null
-
     }
-    search(/** @type {any}*/ value ) {
-        throw new Error("Search not implemented")
+    search(/** @type {any}*/ value) {
+        throw new Error('Search not implemented')
     }
 
     initialize() {
@@ -28,11 +25,10 @@ class SearchBox {
         const filterValueInput = /** @type {HTMLElement} */ (
             document.querySelector(`#input-filter-values-${this.tab.name}`)
         )
-        filterValueInput.addEventListener('input',  () => {
+        filterValueInput.addEventListener('input', () => {
             this.applyFilter(filterValueInput)
         })
     }
-
 
     applyFilter(/** @type {HTMLElement}*/ filterValueInput) {
         // Check whether we should show the clear button.
@@ -66,7 +62,9 @@ class SearchBox {
     }
 
     resetSearchBox() {
-        let searchInput = document.getElementById(`input-filter-values-${this.tab.name}`)
+        let searchInput = document.getElementById(
+            `input-filter-values-${this.tab.name}`
+        )
         searchInput?.removeAttribute('disabled')
         searchInput.value = ''
 
@@ -75,32 +73,30 @@ class SearchBox {
     }
 }
 
-class LocalSearchBox extends SearchBox{
-    constructor (
-        /** @type {Tab} */ tab,
-    ) {
+class LocalSearchBox extends SearchBox {
+    constructor(/** @type {Tab} */ tab) {
         super(tab)
     }
 
-    initialize(){
+    initialize() {
         super.initialize()
     }
 
-    search(
-        /** @type {any}*/ value, 
-    ) {
+    search(/** @type {any}*/ value) {
         if (value === undefined) {
             this.tab.tableWrapper.table.clearFilter(true)
         } else {
             const columnLayout = this.tab.tableWrapper.table.getColumnLayout()
-            const filterArray = columnLayout.map((/** @type {{ field: any; }} */ c) => {
-                return {
-                    field: c.field,
-                    type: 'like',
-                    value: value
-                };
-            })
-            
+            const filterArray = columnLayout.map(
+                (/** @type {{ field: any; }} */ c) => {
+                    return {
+                        field: c.field,
+                        type: 'like',
+                        value: value,
+                    }
+                }
+            )
+
             this.tab.tableWrapper.table.setFilter([filterArray])
         }
         this.tab.tableWrapper.clearAlert()
@@ -108,26 +104,21 @@ class LocalSearchBox extends SearchBox{
 }
 
 class RemoteSearchBox extends SearchBox {
-    constructor(
-        /** @type {Tab} */ tab,
-    ){
+    constructor(/** @type {Tab} */ tab) {
         super(tab)
-
     }
 
-    initialize(){
+    initialize() {
         super.initialize()
     }
 
-    search(
-        /** @type {any}*/ value, 
-    ) {
+    search(/** @type {any}*/ value) {
         const selectedOption = this.tab.pagination.getSelectedPageSize()
         const pageSize =
             selectedOption.innerText === 'all'
                 ? undefined
                 : selectedOption.innerText
-                
+
         // const queryString = getTextFromEditor(aceEditor)
         this.tab.vscode.postMessage({
             type: 'onSearch',

@@ -2,23 +2,21 @@ class Editor {
     constructor(
         /** @type {Tab} */ tab,
         /** @type {EditorControls} */ editorControls,
-        /** @type {any} */ parameters,
-
-    ){
+        /** @type {any} */ parameters
+    ) {
         this.tab = tab
-        
+
         this.defaultQuery = parameters.defaultQuery
         this.shortCutMapping = parameters.shortCutMapping
         this.aceTheme = parameters.theme
         this.aceEditorCompletions = parameters.aceEditorCompletions
 
         this.editorControls = editorControls
-        
+
         this.aceEditor
-        
     }
 
-    initialize(){
+    initialize() {
         this.aceEditor = ace.edit('editor')
 
         this.aceEditor.setTheme(this.aceTheme)
@@ -39,8 +37,9 @@ class Editor {
                 // Get the character immediately after the cursor
                 const charAfterCursor = line[pos.column] || ''
 
-                const aceEditorCompletionsCopy =
-                    structuredClone(this.aceEditorCompletions)
+                const aceEditorCompletionsCopy = structuredClone(
+                    this.aceEditorCompletions
+                )
                 aceEditorCompletionsCopy.forEach((c) => {
                     if (charBeforeCursor === '"' && charAfterCursor === '"') {
                         // If the cursor is between a pair of quotes, offer relevant suggestions
@@ -70,7 +69,6 @@ class Editor {
         var langTools = ace.require('ace/ext/language_tools')
         langTools.addCompleter(completer)
 
-        
         this.aceEditor.commands.addCommand({
             name: 'runQuery',
             bindKey: this.shortCutMapping,
@@ -89,7 +87,7 @@ class Editor {
         }
     }
 
-    setTheme(/** @type {string} */ theme ){
+    setTheme(/** @type {string} */ theme) {
         this.aceEditor.setTheme(theme)
     }
 }

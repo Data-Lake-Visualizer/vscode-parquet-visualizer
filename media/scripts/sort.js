@@ -1,7 +1,5 @@
 class Sort {
-    constructor(
-        /** @type {Tab} */ tab,
-    ){
+    constructor(/** @type {Tab} */ tab) {
         this.tab = tab
 
         this.sortQuery
@@ -67,7 +65,9 @@ class Sort {
         this.sortQuery = sortObject
         this.tab.tableWrapper.setAlert()
 
-        const searchElement = document.getElementById(`input-filter-values-${this.tab.name}`)
+        const searchElement = document.getElementById(
+            `input-filter-values-${this.tab.name}`
+        )
         const searchString = searchElement.value.trim()
         const selectedOptionValue = selectedOption.innerText.toLowerCase()
         const pageSize =
@@ -88,8 +88,4 @@ class Sort {
             query: msgQuery,
         })
     }
-
 }
-
-
-

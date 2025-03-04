@@ -327,7 +327,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     fireExportCompleteEvent(tabName: string) {
         this._onDidExport.fire({
-            tabName: tabName
+            tabName: tabName,
         })
     }
 
@@ -419,8 +419,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     }
 
     async search(message: any) {
-        let queryResult;
-        let searchQuery ={
+        let queryResult
+        let searchQuery = {
             source: 'search',
             query: {
                 pageNumber: 1,
@@ -493,7 +493,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 savedPath: savedPath.fsPath,
                 searchString: message.searchString,
                 sort: message.sort,
-                tabName: message.tabName
+                tabName: message.tabName,
             })
 
             this.fireExportCompleteEvent(message.tabName)
@@ -513,10 +513,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             const errorMessage = `Export failed: ${error.message}`
             getLogger().error(error.message)
             vscode.window.showErrorMessage(errorMessage)
-            this.fireErrorEvent(
-                message.source,
-                errorMessage
-            )
+            this.fireErrorEvent(message.source, errorMessage)
         }
         return exportType
     }
@@ -631,7 +628,7 @@ export class TabularDocumentEditorProvider
                 for (const webviewPanel of this.webviews.get(document.uri)) {
                     this.postMessage(webviewPanel, 'exportComplete', {
                         type: 'exportComplete',
-                        tabName: e.tabName
+                        tabName: e.tabName,
                     })
                 }
             })
@@ -1101,7 +1098,7 @@ export class TabularDocumentEditorProvider
     }
 
     private createTableActionsHtml(tabName: string, isQueryable: boolean) {
-        let tableActionHtml = '';
+        let tableActionHtml = ''
 
         if (isQueryable) {
             tableActionHtml += `
@@ -1179,7 +1176,6 @@ export class TabularDocumentEditorProvider
         `
         return tableActionHtml
     }
-
 
     private getHtmlForWebview(
         webview: vscode.Webview,
@@ -1294,7 +1290,7 @@ export class TabularDocumentEditorProvider
             queryActionsBodyHtml =
                 '<p>The loaded backend parquet-wasm does not support SQL.</p>'
         } else {
-            queryActionsBodyHtml = this.createTableActionsHtml("queryTab", true)
+            queryActionsBodyHtml = this.createTableActionsHtml('queryTab', true)
         }
 
         const html = `
@@ -1358,14 +1354,14 @@ export class TabularDocumentEditorProvider
                       
                       <div class="tab" id="data-tab-panel">
                         <div class="tab-container">
-                          ${this.createTableActionsHtml("dataTab", false)}
+                          ${this.createTableActionsHtml('dataTab', false)}
                           <div id="table-dataTab"></div>
                         </div>
                       </div>
                       
                       <div class="tab" id="schema-tab-panel">
                         <div class="tab-container">
-                            ${this.createTableActionsHtml("schemaTab", false)}
+                            ${this.createTableActionsHtml('schemaTab', false)}
                             <div id="table-schemaTab"></div>
                         </div>
                       </div>

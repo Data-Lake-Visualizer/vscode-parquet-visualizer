@@ -133,7 +133,7 @@ class QueryHelper {
 
         let tableName = ''
         let query = ''
-        if (searchString === undefined || searchString === ''){
+        if (searchString === undefined || searchString === '') {
             tableName = this.tableName
             query = schemaQuery
         } else {
@@ -141,9 +141,7 @@ class QueryHelper {
             query = `
                 CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
             `
-                
-            }
-            
+        }
 
         if (searchString && searchString !== '') {
             const querySchemaResult = await this.backend.query(
@@ -227,7 +225,7 @@ class QueryHelper {
         const exportType = message.exportType
         const savedPath = message.savedPath
 
-        let tableName;
+        let tableName
         if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
             tableName = 'schema_result'
             const query = `
@@ -346,10 +344,7 @@ export class BackendWorker {
     queryHelper: QueryHelper
 
     private constructor(backend: DuckDBBackend, tabName: string) {
-        this.queryHelper = new QueryHelper(
-            backend,
-            tabName
-        )
+        this.queryHelper = new QueryHelper(backend, tabName)
     }
 
     static async create(
