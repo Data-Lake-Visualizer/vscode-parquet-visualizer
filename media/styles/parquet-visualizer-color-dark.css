@@ -45,6 +45,11 @@
     color: #d4d4d4;
 }
 
+.tabulator-tooltip.tabulator-popup-container {
+    background-color: #101010;
+    color: #d4d4d4;
+}
+
 .tabulator-menu.tabulator-popup-container {
     background: black;
 }
