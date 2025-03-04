@@ -1,3 +1,10 @@
+# [0.28.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.27.0...v0.28.0) (2025-03-04)
+
+
+### Features
+
+* add selecting/copying column names ([604eb0b](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/604eb0b57e98c0b6bcedd0bcd07b034fbfa90a1d))
+
 # [0.27.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.26.0...v0.27.0) (2025-03-04)
 
 
