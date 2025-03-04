@@ -61,6 +61,11 @@
     color: #242424;
 }
 
+.tabulator-tooltip.tabulator-popup-container {
+    background-color: #ffffff;
+    color: #242424;
+}
+
 #table-dataTab ::-webkit-scrollbar-thumb:hover,
 #table-queryTab ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(172, 172, 172, 1);
