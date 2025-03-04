@@ -140,7 +140,8 @@
 
 .dropdown-icon path,
 .export-icon path,
-.export-icon rect {
+.export-icon rect,
+.reset-sort-icon {
     fill: none;
     stroke: #000000;
 }

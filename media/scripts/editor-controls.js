@@ -7,7 +7,7 @@ class EditorControls{
     }
 
     initialize() {
-        console.log("editorControls.initialize()")
+        // console.log("editorControls.initialize()")
         const runQueryButton = document.getElementById('run-query-btn')
         runQueryButton?.addEventListener('click', (e) => {
             this.runQuery()

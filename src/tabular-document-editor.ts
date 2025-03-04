@@ -1134,7 +1134,18 @@ export class TabularDocumentEditorProvider
                     </div>
                 </div>
                 
-                <button class="tabulator-page flex-button" id="reset-sort-${tabName}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort">Reset Sort</button>
+                <button class="tabulator-page flex-button" id="reset-sort-${tabName}" type="button" role="button" aria-label="Reset Sort" title="Reset Sort">
+                    <svg class="reset-sort-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Up Arrow -->
+                        <line x1="5" y1="12" x2="5" y2="4" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                        <polyline points="3,6 5,4 7,6" stroke="white" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+                        <!-- Down Arrow -->
+                        <line x1="11" y1="4" x2="11" y2="12" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                        <polyline points="9,10 11,12 13,10" stroke="white" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Reset Sort
+                </button>
 
                 <button class="tabulator-page flex-button" id="copy-${tabName}" type="button" role="button" aria-label="Copy page to clipboard" title="Copy page to clipboard">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" focusable="false" aria-hidden="true" width="16" height="16" class="copy-icon">

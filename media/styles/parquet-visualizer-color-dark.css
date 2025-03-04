@@ -109,3 +109,7 @@
 .dropdown-menu li span:hover {
     font-weight: bolder;
 }
+
+.reset-sort-icon {
+    stroke: #ffffff;
+}
