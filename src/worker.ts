@@ -16,8 +16,9 @@ import {
     replacePeriodWithUnderscoreInKey,
     getPageCountFromInput,
 } from './util'
-import { DateTimeFormatSettings, SerializeableUri } from './types'
+import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
+import { AWSProfile } from './pro/aws/aws-profile-helper'
 // import { getLogger } from './logger'
 
 if (!parentPort) {
@@ -211,11 +212,14 @@ class QueryHelper {
             throw new Error("Query string must contain 'FROM data'")
         }
 
+        const path = this.backend.getPathForQuery(this.backend.uri);
+        const readFn = this.backend.getReadFunctionByFileType();
+
         return query.replace(
             pattern,
             `
-      FROM ${this.backend.getReadFunctionByFileType()}
-      ('${this.backend.uri.fsPath}')
+      FROM ${readFn}
+      ('${path}')
     `
         )
     }
@@ -228,9 +232,12 @@ class QueryHelper {
         let tableName
         if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
             tableName = 'schema_result'
+
+            const path = this.backend.getPathForQuery(this.backend.uri);
+            const readFn = this.backend.getReadFunctionByFileType();
             const query = `
                 CREATE TABLE ${tableName} AS SELECT * FROM (
-                    DESCRIBE SELECT * FROM ${this.backend.getReadFunctionByFileType()}('${this.backend.uri.fsPath}')
+                    DESCRIBE SELECT * FROM ${readFn}('${path}')
                 )
             `
             await this.backend.query(query)
@@ -349,19 +356,26 @@ export class BackendWorker {
 
     static async create(
         tabName: string,
-        serializeableUri: SerializeableUri,
-        dateTimeFormatSettings: DateTimeFormatSettings
+        uri: URI,
+        dateTimeFormatSettings: DateTimeFormatSettings,
+        awsConnection?: AWSProfile,
+        region?: string,
     ) {
         // getLogger().info(`BackendWorker.create()`)
-        const path = `${serializeableUri.scheme}://${serializeableUri.path}`
-        const uri = URI.parse(path, true)
         const backend = await DuckDBBackend.createAsync(
             uri,
-            dateTimeFormatSettings
+            dateTimeFormatSettings,
+            awsConnection,
+            region
         )
-        await backend.initialize()
+        // await backend.initialize()
 
         return new BackendWorker(backend, tabName)
+    }
+
+    public async init(): Promise<void> {
+        // getLogger().info(`BackendWorker.init()`)
+        await this.queryHelper.backend.initialize()
     }
 
     public exit(): void {
@@ -447,10 +461,21 @@ export class BackendWorker {
 }
 
 ;(async () => {
+    const uri = workerData.uri
+    const parsedUri = URI.from({
+        scheme: uri.scheme,
+        authority: uri.authority,
+        fragment: uri.fragment,
+        path: uri.path,
+        query: uri.query
+    })
+    workerData.uri
     const worker = await BackendWorker.create(
         workerData.tabName,
-        workerData.uri,
-        workerData.dateTimeFormatSettings
+        parsedUri,
+        workerData.dateTimeFormatSettings,
+        workerData?.awsConnection,
+        workerData?.region,
     )
 
     comlink.expose(worker, nodeEndpoint(parentPort))

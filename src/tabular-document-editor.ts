@@ -24,12 +24,13 @@ import {
     outputDateTimeFormatInUTC,
     runQueryOnStartup,
 } from './settings'
-import { DateTimeFormatSettings, SerializeableUri } from './types'
+import { DateTimeFormatSettings } from './types'
 
 import { TelemetryManager } from './telemetry'
 import { getLogger } from './logger'
 
 import * as constants from './constants'
+import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 class CustomDocument extends Disposable implements vscode.CustomDocument {
     uri: vscode.Uri
@@ -41,7 +42,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     savedExporturi: vscode.Uri
 
     static async create(
-        uri: vscode.Uri
+        uri: vscode.Uri,
+        currentConnection?: AWSProfile,
+        region?: string
     ): Promise<CustomDocument | PromiseLike<CustomDocument>> {
         getLogger().debug(`CustomDocument.create(${uri})`)
 
@@ -55,7 +58,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 case 'duckdb': {
                     const backend = await DuckDBBackend.createAsync(
                         uri,
-                        dateTimeFormatSettings
+                        dateTimeFormatSettings,
+                        currentConnection,
+                        region
                     )
                     await backend.initialize()
                     const totalItems = backend.getRowCount()
@@ -68,7 +73,12 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                         numColumns: columnCount.toString(),
                     })
 
-                    return new CustomDocument(uri, backend)
+                    return new CustomDocument(
+                        uri, 
+                        backend, 
+                        currentConnection,
+                        region
+                    )
                 }
                 case 'parquet-wasm': {
                     const backend = await ParquetWasmBackend.createAsync(
@@ -84,7 +94,11 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                         numColumns: columnCount.toString(),
                     })
 
-                    return new CustomDocument(uri, backend)
+                    return new CustomDocument(
+                        uri, 
+                        backend, 
+                        currentConnection
+                    )
                 }
                 default:
                     const errorMessage = 'Unknown backend. Terminating'
@@ -152,7 +166,12 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         }
     }
 
-    private constructor(uri: vscode.Uri, backend: Backend) {
+    private constructor(
+        uri: vscode.Uri, 
+        backend: Backend, 
+        connection?: AWSProfile,
+        region?: string
+    ) {
         super()
         this.uri = uri
         this.backend = backend
@@ -166,16 +185,13 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         const workerPath = __dirname + '/worker.js'
 
-        const serializeableUri: SerializeableUri = {
-            path: uri.path,
-            scheme: uri.scheme,
-        }
-
         const dataWorker = new Worker(workerPath, {
             workerData: {
                 tabName: constants.REQUEST_SOURCE_DATA_TAB,
-                uri: serializeableUri,
+                uri: uri,
                 dateTimeFormatSettings: dateTimeFormatSettings,
+                awsConnection: connection,
+                region: region
             },
         })
 
@@ -190,8 +206,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             const queryWorker = new Worker(workerPath, {
                 workerData: {
                     tabName: constants.REQUEST_SOURCE_QUERY_TAB,
-                    uri: serializeableUri,
+                    uri: uri,
                     dateTimeFormatSettings: dateTimeFormatSettings,
+                    awsConnection: connection,
+                    region: region
                 },
             })
             this.queryTabWorker = comlink.wrap<BackendWorker>(
@@ -451,22 +469,25 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     async export(message: any) {
         const exportType = message.exportType as string
-        const parsedPath = path.parse(this.uri.fsPath)
-
-        const extension =
-            constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType]
-        parsedPath.base = `${parsedPath.name}.${extension}`
-        parsedPath.ext = extension
-        const suggestedPath = path.format(parsedPath)
-
+    
+        // Extract base name from the original URI (local or remote)
+        const parsedSourcePath = path.parse(this.uri.path)
+        const extension = constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType]
+        const fileName = `${parsedSourcePath.name}.${extension}`
+    
+        // Determine the workspace directory or fallback to home
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+        const baseDir = workspaceFolder || require('os').homedir()
+    
         let suggestedUri: vscode.Uri
         if (this.savedExporturi !== undefined) {
-            const parsedPath = path.parse(this.savedExporturi.fsPath)
-            parsedPath.base = `${parsedPath.name}.${extension}`
-            parsedPath.ext = extension
-            suggestedUri = vscode.Uri.file(path.format(parsedPath))
+            const parsedSavedPath = path.parse(this.savedExporturi.fsPath)
+            parsedSavedPath.base = `${parsedSavedPath.name}.${extension}`
+            parsedSavedPath.ext = extension
+            suggestedUri = vscode.Uri.file(path.format(parsedSavedPath))
         } else {
-            suggestedUri = vscode.Uri.file(suggestedPath)
+            const fullPath = path.join(baseDir, fileName)
+            suggestedUri = vscode.Uri.file(fullPath)
         }
 
         const fileNameExtensionfullName =
@@ -565,7 +586,22 @@ export class TabularDocumentEditorProvider
             `TabularDocumentEditorProvider.openCustomDocument(${uri})`
         )
         // console.log(`openCustomDocument(uri: ${uri})`);
-        const document: CustomDocument = await CustomDocument.create(uri)
+
+        const currentConnection = this.context.globalState.get<AWSProfile>("parquet-visualizer.currentConnection")
+        const region = this.context.workspaceState.get<string>('parquet-visualizer.currentSelectedRegion')
+        const document: CustomDocument = await CustomDocument.create(
+            uri, 
+            currentConnection,
+            region,
+        )
+
+        try {
+            await document.dataTabWorker.init()
+            await document.queryTabWorker.init()
+        } catch (error: unknown) {
+            console.error(error)
+            throw error;
+        }
 
         this.listeners.push(
             vscode.window.onDidChangeActiveColorTheme((e) => {
@@ -887,7 +923,7 @@ export class TabularDocumentEditorProvider
                 defaultRunQueryKeyBindingFromSettings
             )
 
-            const data = {
+            const queryTabData = {
                 headers: tableData.headers,
                 schema: tableData.schema,
                 schemaTabData: schema,
@@ -914,7 +950,7 @@ export class TabularDocumentEditorProvider
                     try {
                         if (document.uri.scheme === 'untitled') {
                             this.postMessage(webviewPanel, 'init', {
-                                tableData: data,
+                                tableData: queryTabData,
                             })
                         } else {
                             getLogger().debug(
@@ -922,7 +958,7 @@ export class TabularDocumentEditorProvider
                             )
 
                             this.postMessage(webviewPanel, 'init', {
-                                tableData: data,
+                                tableData: queryTabData,
                             })
 
                             if (!document.isQueryAble) {
@@ -932,43 +968,45 @@ export class TabularDocumentEditorProvider
                                 return
                             }
 
-                            const queryMessage = {
-                                source: 'paginator',
-                                query: {
-                                    queryString: defaultQueryFromSettings,
-                                    pageSize: pageSize,
-                                },
-                            }
-
-                            try {
-                                const result =
-                                    await document.dataTabWorker.query(
-                                        queryMessage
+                            void (async () => {
+                                const queryMessage = {
+                                    source: 'paginator',
+                                    query: {
+                                        queryString: defaultQueryFromSettings,
+                                        pageSize: pageSize,
+                                    },
+                                }
+    
+                                try {
+                                    const result =
+                                        await document.dataTabWorker.query(
+                                            queryMessage
+                                        )
+    
+                                    getLogger().debug(
+                                        `TabularDocumentEditorProvider resolved data tab data`
                                     )
-
-                                getLogger().debug(
-                                    `TabularDocumentEditorProvider resolved data tab data`
-                                )
-
-                                document.fireChangedDocumentEvent(
-                                    result.result,
-                                    result.headers,
-                                    totalRowCount,
-                                    constants.REQUEST_SOURCE_DATA_TAB,
-                                    result.type,
-                                    result.pageSize,
-                                    result.pageNumber,
-                                    totalPageCount
-                                )
-                            } catch (queryError) {
-                                getLogger().error(
-                                    'Failed to get data for data tab',
-                                    queryError
-                                )
-                                vscode.window.showErrorMessage(
-                                    'Failed to get data for data tab.'
-                                )
-                            }
+    
+                                    document.fireChangedDocumentEvent(
+                                        result.result,
+                                        result.headers,
+                                        totalRowCount,
+                                        constants.REQUEST_SOURCE_DATA_TAB,
+                                        result.type,
+                                        result.pageSize,
+                                        result.pageNumber,
+                                        totalPageCount
+                                    )
+                                } catch (queryError) {
+                                    getLogger().error(
+                                        'Failed to get data for data tab',
+                                        queryError
+                                    )
+                                    vscode.window.showErrorMessage(
+                                        'Failed to get data for data tab.'
+                                    )
+                                }
+                            })()
                         }
                     } catch (messageError) {
                         getLogger().error(
