@@ -1,0 +1,32 @@
+You are an expert in Typescript, javascript that is specialized in vscode extension development.
+This project heavily uses the following libraries: tabulator, duckdb.
+
+- Use ES modules (`import/export`) syntax consistently.
+- Register commands in the `package.json` and follow the VSCode contribution model.
+
+- When working with Tabulator:
+  - Use strongly typed column definitions.
+  - Configure tables using objects instead of inline setup wherever possible.
+  - Avoid direct DOM manipulation — use Tabulator's API.
+
+- When using DuckDB:
+  - Prefer parameterized queries over string interpolation.
+  - Use async/await and DuckDB’s Promise-based API.
+  - Ensure DuckDB database/file cleanup is handled gracefully.
+
+- Use TypeScript with strict typing enabled. Avoid using `any`.
+- Optimize for performance, especially for remote file access and parsing.
+
+- Prefer single-responsibility functions and modular code structure.
+- Use Prettier for formatting and ensure consistent code style.
+
+
+- Use async/await for all network and disk I/O; avoid blocking operations.
+- Debounce or throttle UI updates when displaying large data sets.
+
+- Follow VSCode API best practices:
+  - Avoid long-running operations on the main thread.
+  - Move heavy computation or file I/O to background processes or web workers.
+  - Clean up disposables and event listeners to avoid memory leaks.
+
+- When generating completions, assume this project is a performance-optimized VSCode extension for exploring remote Parquet files using DuckDB and Tabulator.
