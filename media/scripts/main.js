@@ -376,11 +376,20 @@
             tab.pagination.pageNumber = pageNumber
             tab.tableWrapper.schema = schema
 
-            // TODO: how to re-initialize headers?
-            tab?.tableWrapper.table.setColumns(headers)
             tab?.tableWrapper.replaceData(data)
-            tab?.tableWrapper.clearAlert()
+
+            const columns = headers.map((c) => ({
+                ...c,
+                sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
+                    return 0
+                },
+                cellClick: onCellClick,
+                headerTooltip: true,
+            }))
+            tab?.tableWrapper.setColumns(columns)
             tab?.editor?.editorControls.reset()
+            tab?.tableWrapper.clearAlert()
+            
         } else if (requestType === 'paginator') {
             tab.pagination.rowCount = rowCount
             tab.pagination.pageCount = pageCount
@@ -439,7 +448,7 @@
 
     // Handle messages from the extension
     window.addEventListener('message', async (e) => {
-        // console.log(e.data);
+        console.log(e.data);
         const { type, body } = e.data
         switch (type) {
             case 'init': {

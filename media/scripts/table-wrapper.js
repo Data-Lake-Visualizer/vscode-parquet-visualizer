@@ -1,4 +1,5 @@
 const NAME_QUERY_TAB = 'queryTab'
+const NAME_DATA_TAB = 'dataTab'
 
 class TableWrapper extends EventTarget {
     constructor(/** @type {Tab} */ tab, /** @type {any} */ parameters) {
@@ -20,8 +21,9 @@ class TableWrapper extends EventTarget {
         /** @type {Array<any>} */ columns,
         /** @type {string | undefined} */ footerHTML
     ) {
+        const placeHolder = (this.tab.name === NAME_DATA_TAB) ? 'Loading Data...' : 'No Data Available'
         this.table = new Tabulator(this.tab.selector, {
-            placeholder: 'No Data Available',
+            placeholder: placeHolder,
             data: data,
             columns: columns,
             headerSortClickElement: 'icon',
@@ -114,6 +116,10 @@ class TableWrapper extends EventTarget {
             return outputHtml
         }
         return output
+    }
+
+    setColumns(/** @type {any}*/ columns) {
+        this.table.setColumns(columns)
     }
 
     replaceData(/** @type {any}*/ data) {
