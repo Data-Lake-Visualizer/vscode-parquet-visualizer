@@ -31,8 +31,8 @@ export class DuckDBPaginator extends Paginator {
 
         let source
         if (this.readFromFile) {
-            const path = this.backend.getPathForQuery(this.backend.uri);
-            const readFn = this.backend.getReadFunctionByFileType();
+            const path = this.backend.getPathForQuery(this.backend.uri)
+            const readFn = this.backend.getReadFunctionByFileType()
             source = `${readFn}('${path}')`
         } else {
             source = this.table

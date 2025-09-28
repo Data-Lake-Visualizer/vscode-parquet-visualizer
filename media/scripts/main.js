@@ -173,7 +173,7 @@
         /** @type {any} */ schemaQueryResult,
         /** @type {any} */ editorSettings
     ) {
-        console.log("initQueryTab()")
+        console.log('initQueryTab()')
         const queryTab = tabManager.getTab(requestSourceQueryTab)
         queryTab?.addTable({
             schema: schemaQueryResult,
@@ -206,7 +206,7 @@
         queryTab?.tableWrapper?.build(data, columns, footerHTML)
 
         queryTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log("queryTab tableBuilt")
+            console.log('queryTab tableBuilt')
             queryTab?.editor.initialize()
             queryTab?.editor.editorControls.initialize()
             queryTab?.resultControls.initialize()
@@ -335,7 +335,7 @@
         dataTab?.tableWrapper?.build(data, columns, footerHTML)
 
         dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log("dataTab tableBuilt")
+            console.log('dataTab tableBuilt')
             dataTab?.resultControls.initialize()
             dataTab?.pagination?.initialize()
             dataTab?.sort.initialize()
@@ -388,8 +388,6 @@
             tab?.editor?.editorControls.reset()
             tab?.sort.initialize()
             tab?.tableWrapper.clearAlert()
-
-            
         } else if (requestType === 'paginator') {
             tab.pagination.rowCount = rowCount
             tab.pagination.pageCount = pageCount

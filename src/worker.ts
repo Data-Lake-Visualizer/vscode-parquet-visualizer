@@ -78,7 +78,7 @@ class QueryHelper {
             rowCount: this.rowCount,
         }
     }
-    
+
     async initializeData(queryObject: QueryObject) {
         const query = this.formatQueryString(queryObject.queryString)
         await this.backend.query(
@@ -91,11 +91,11 @@ class QueryHelper {
     async query(queryObject: QueryObject) {
         // getLogger().info(`QueryHelper.query()`)
         await this.initializeData(queryObject)
-        
+
         const queryResult = await this.backend.query(
             `SELECT COUNT(*) AS count FROM ${this.tableName}`
         )
-        
+
         if (this.tabName === constants.REQUEST_SOURCE_QUERY_TAB) {
             this.rowCount = Number(queryResult[0]['count'])
         } else {
@@ -216,8 +216,8 @@ class QueryHelper {
             throw new Error("Query string must contain 'FROM data'")
         }
 
-        const path = this.backend.getPathForQuery(this.backend.uri);
-        const readFn = this.backend.getReadFunctionByFileType();
+        const path = this.backend.getPathForQuery(this.backend.uri)
+        const readFn = this.backend.getReadFunctionByFileType()
 
         return query.replace(
             pattern,
@@ -237,8 +237,8 @@ class QueryHelper {
         if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
             tableName = 'schema_result'
 
-            const path = this.backend.getPathForQuery(this.backend.uri);
-            const readFn = this.backend.getReadFunctionByFileType();
+            const path = this.backend.getPathForQuery(this.backend.uri)
+            const readFn = this.backend.getReadFunctionByFileType()
             const query = `
                 CREATE TABLE ${tableName} AS SELECT * FROM (
                     DESCRIBE SELECT * FROM ${readFn}('${path}')
@@ -363,7 +363,7 @@ export class BackendWorker {
         uri: URI,
         dateTimeFormatSettings: DateTimeFormatSettings,
         awsConnection?: AWSProfile,
-        region?: string,
+        region?: string
     ) {
         // getLogger().info(`BackendWorker.create()`)
         const backend = await DuckDBBackend.createAsync(
@@ -486,7 +486,6 @@ export class BackendWorker {
     getMetaData() {
         return this.queryHelper.backend.getMetaData()
     }
-    
 }
 
 ;(async () => {
@@ -496,7 +495,7 @@ export class BackendWorker {
         authority: uri.authority,
         fragment: uri.fragment,
         path: uri.path,
-        query: uri.query
+        query: uri.query,
     })
     workerData.uri
     const worker = await BackendWorker.create(
@@ -504,7 +503,7 @@ export class BackendWorker {
         parsedUri,
         workerData.dateTimeFormatSettings,
         workerData?.awsConnection,
-        workerData?.region,
+        workerData?.region
     )
 
     comlink.expose(worker, nodeEndpoint(parentPort))

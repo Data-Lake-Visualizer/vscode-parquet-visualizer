@@ -1,4 +1,4 @@
-import os from 'os';
+import os from 'os'
 
 import * as duckdb from 'duckdb-async'
 import * as vscode from 'vscode'
@@ -39,9 +39,9 @@ export class DuckDBBackend extends Backend {
     ) {
         const db = await duckdb.Database.create(':memory:')
         return new DuckDBBackend(
-            uri, 
-            dateTimeFormatSettings, 
-            db, 
+            uri,
+            dateTimeFormatSettings,
+            db,
             currentConnection,
             region
         )
@@ -50,7 +50,7 @@ export class DuckDBBackend extends Backend {
     dispose() {}
 
     public async initialize() {
-        const cores = os.cpus().length;
+        const cores = os.cpus().length
         await this.db.all(`
           INSTALL arrow; LOAD arrow;
           INSTALL spatial; LOAD spatial;
@@ -60,9 +60,9 @@ export class DuckDBBackend extends Backend {
         if (this.uri.scheme !== 'file') {
             const sessionTokenLine = this.awsProfile?.sessionToken
                 ? `,\n    SESSION_TOKEN '${this.awsProfile.sessionToken}'`
-                : '';
-            
-            // TODO: pass region 
+                : ''
+
+            // TODO: pass region
             await this.db.all(`    
               CREATE OR REPLACE SECRET secret (
                     TYPE s3,
@@ -74,8 +74,8 @@ export class DuckDBBackend extends Backend {
         }
 
         if (this.extensionName === constants.CSV_NAME_EXTENSION) {
-            const path = this.getPathForQuery(this.uri);
-            const readFn = this.getReadFunctionByFileType();
+            const path = this.getPathForQuery(this.uri)
+            const readFn = this.getReadFunctionByFileType()
             const queryResult = await this.db.all(`
           SELECT COUNT(*) 
           FROM ${readFn}('${path}')
@@ -122,7 +122,7 @@ export class DuckDBBackend extends Backend {
 
     getMetaDataImpl(): Promise<any> {
         try {
-            const path = this.getPathForQuery(this.uri);
+            const path = this.getPathForQuery(this.uri)
             return this.db.all(`
           SELECT * 
           FROM parquet_file_metadata('${path}')
@@ -156,12 +156,12 @@ export class DuckDBBackend extends Backend {
     public getPathForQuery(uri: vscode.Uri): string {
         if (uri.scheme === 'file') {
             // Escape backslashes on Windows, if needed
-            return uri.fsPath.replace(/\\/g, '/');
+            return uri.fsPath.replace(/\\/g, '/')
         } else if (uri.scheme === 's3') {
             // Example: vscode.Uri.parse('s3://my-bucket/path/to/file.parquet')
-            return `s3://${uri.authority}${uri.path}`;
+            return `s3://${uri.authority}${uri.path}`
         } else {
-            throw new Error(`Unsupported URI scheme: ${uri.scheme}`);
+            throw new Error(`Unsupported URI scheme: ${uri.scheme}`)
         }
     }
 }

@@ -21,7 +21,10 @@ class TableWrapper extends EventTarget {
         /** @type {Array<any>} */ columns,
         /** @type {string | undefined} */ footerHTML
     ) {
-        const placeHolder = (this.tab.name === NAME_DATA_TAB) ? 'Loading Data...' : 'No Data Available'
+        const placeHolder =
+            this.tab.name === NAME_DATA_TAB
+                ? 'Loading Data...'
+                : 'No Data Available'
         this.table = new Tabulator(this.tab.selector, {
             placeholder: placeHolder,
             data: data,

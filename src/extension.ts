@@ -49,13 +49,13 @@ export function activate(context: vscode.ExtensionContext) {
     //     vscode.commands.registerCommand('dataLakeExlorerView.aws.openS3Parquet', async (item: S3TreeItem) => {
     //       const { s3Bucket, s3Key } = item;
     //       const uri = vscode.Uri.parse(`s3://${s3Bucket}/${s3Key}`);
-      
+
     //       // Open using your registered custom editor
     //       await vscode.commands.executeCommand(
     //         'vscode.openWith',
     //         uri,
     //         // This must match the viewType in registerCustomEditorProvider
-    //         'parquet-visualizer.parquetVisualizer' 
+    //         'parquet-visualizer.parquetVisualizer'
     //       );
     //     })
     //   );

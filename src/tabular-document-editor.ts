@@ -55,8 +55,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             switch (backendName) {
                 case 'duckdb': {
                     return new CustomDocument(
-                        uri, 
-                        backendName, 
+                        uri,
+                        backendName,
                         currentConnection,
                         region
                     )
@@ -76,8 +76,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     })
 
                     return new CustomDocument(
-                        uri, 
-                        backendName, 
+                        uri,
+                        backendName,
                         currentConnection
                     )
                 }
@@ -144,8 +144,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     }
 
     private constructor(
-        uri: vscode.Uri, 
-        backend: string, 
+        uri: vscode.Uri,
+        backend: string,
         connection?: AWSProfile,
         region?: string
     ) {
@@ -167,7 +167,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 uri: uri,
                 dateTimeFormatSettings: dateTimeFormatSettings,
                 awsConnection: connection,
-                region: region
+                region: region,
             },
         })
 
@@ -185,7 +185,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     uri: uri,
                     dateTimeFormatSettings: dateTimeFormatSettings,
                     awsConnection: connection,
-                    region: region
+                    region: region,
                 },
             })
             this.queryTabWorker = comlink.wrap<BackendWorker>(
@@ -444,16 +444,18 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     async export(message: any) {
         const exportType = message.exportType as string
-    
+
         // Extract base name from the original URI (local or remote)
         const parsedSourcePath = path.parse(this.uri.path)
-        const extension = constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType]
+        const extension =
+            constants.FILENAME_SHORTNAME_EXTENSION_MAPPING[exportType]
         const fileName = `${parsedSourcePath.name}.${extension}`
-    
+
         // Determine the workspace directory or fallback to home
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+        const workspaceFolder =
+            vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
         const baseDir = workspaceFolder || require('os').homedir()
-    
+
         let suggestedUri: vscode.Uri
         if (this.savedExporturi !== undefined) {
             const parsedSavedPath = path.parse(this.savedExporturi.fsPath)
@@ -562,12 +564,16 @@ export class TabularDocumentEditorProvider
         )
         // console.log(`openCustomDocument(uri: ${uri})`);
 
-        const currentConnection = this.context.globalState.get<AWSProfile>("parquet-visualizer.currentConnection")
-        const region = this.context.workspaceState.get<string>('parquet-visualizer.currentSelectedRegion')
+        const currentConnection = this.context.globalState.get<AWSProfile>(
+            'parquet-visualizer.currentConnection'
+        )
+        const region = this.context.workspaceState.get<string>(
+            'parquet-visualizer.currentSelectedRegion'
+        )
         const document: CustomDocument = await CustomDocument.create(
-            uri, 
+            uri,
             currentConnection,
-            region,
+            region
         )
 
         try {
@@ -575,7 +581,7 @@ export class TabularDocumentEditorProvider
             await document.queryTabWorker.init()
         } catch (error: unknown) {
             console.error(error)
-            throw error;
+            throw error
         }
 
         this.listeners.push(
@@ -850,10 +856,10 @@ export class TabularDocumentEditorProvider
                         rowCount: result.rowCount,
                         pageCount: result.pageCount,
                     }
-                    
+
                     totalRowCount = await document.queryTabWorker.getRowCount()
                     totalPageCount = Math.ceil(totalRowCount / pageSize)
-                                        
+
                     schema = await document.queryTabWorker.getSchema()
                     totalColumnCount = schema.length
 
@@ -865,7 +871,6 @@ export class TabularDocumentEditorProvider
                         numRows: totalRowCount.toString(),
                         numColumns: totalColumnCount.toString(),
                     })
-
                 } else {
                     // If backend is parquet-wasm
                     const queryMessage = {
@@ -890,10 +895,9 @@ export class TabularDocumentEditorProvider
                         pageCount: result.pageCount,
                     }
 
-                    
                     totalRowCount = await document.dataTabWorker.getRowCount()
                     totalPageCount = Math.ceil(totalRowCount / pageSize)
-                    
+
                     await document.dataTabWorker.initializeSchema()
                     schema = await document.dataTabWorker.getSchema()
                     totalColumnCount = schema.length
@@ -912,9 +916,8 @@ export class TabularDocumentEditorProvider
                 vscode.window.showErrorMessage(
                     'Failed to run the initial query.'
                 )
-                throw error;
+                throw error
             }
-
 
             const aceEditorCompletions = this.getAceEditorCompletions(schema)
             const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind)
@@ -1097,15 +1100,15 @@ export class TabularDocumentEditorProvider
         }
     }
 
-    private async initDataTab(document: CustomDocument){
+    private async initDataTab(document: CustomDocument) {
         const defaultQueryFromSettings = defaultQuery()
-        
+
         const defaultPageSizesFromSettings = defaultPageSizes()
         const firstPageSize = defaultPageSizesFromSettings[0]
         const pageSize = Number(firstPageSize)
-        
+
         const defaultRunQueryKeyBindingFromSettings =
-                defaultRunQueryKeyBinding()
+            defaultRunQueryKeyBinding()
         const shortCutMapping = this.createShortcutMapping(
             defaultRunQueryKeyBindingFromSettings
         )
@@ -1124,10 +1127,7 @@ export class TabularDocumentEditorProvider
         const totalPageCount = Math.ceil(totalRowCount / pageSize)
 
         try {
-            const result =
-                await document.dataTabWorker.query(
-                    queryMessage
-                )
+            const result = await document.dataTabWorker.query(queryMessage)
 
             const tableData = {
                 result: result.result,
@@ -1154,7 +1154,6 @@ export class TabularDocumentEditorProvider
                     shortCutMapping: shortCutMapping,
                 },
             }
-            
 
             for (const webviewPanel of this.webviews.get(document.uri)) {
                 await this.postMessage(webviewPanel, 'init', {
@@ -1166,15 +1165,9 @@ export class TabularDocumentEditorProvider
                 `TabularDocumentEditorProvider resolved data tab data`
             )
         } catch (queryError) {
-            getLogger().error(
-                'Failed to get data for data tab',
-                queryError
-            )
-            vscode.window.showErrorMessage(
-                'Failed to get data for data tab.'
-            )
+            getLogger().error('Failed to get data for data tab', queryError)
+            vscode.window.showErrorMessage('Failed to get data for data tab.')
         }
-
     }
 
     private fillTemplate(

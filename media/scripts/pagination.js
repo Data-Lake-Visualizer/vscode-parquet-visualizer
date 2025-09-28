@@ -246,9 +246,9 @@ class Pagination {
         )
 
         if (!nextButton) {
-            return;
+            return
         }
-        
+
         if (amountOfPages <= 1) {
             nextButton.setAttribute('disabled', '')
             prevButton.setAttribute('disabled', '')
