@@ -78,21 +78,24 @@ class QueryHelper {
             rowCount: this.rowCount,
         }
     }
-
-    async query(queryObject: QueryObject) {
-        // getLogger().info(`QueryHelper.query()`)
-        let query = this.formatQueryString(queryObject.queryString)
-
+    
+    async initializeData(queryObject: QueryObject) {
+        const query = this.formatQueryString(queryObject.queryString)
         await this.backend.query(
             `CREATE OR REPLACE TABLE ${this.tableName} AS 
             ${query}
         `
         )
+    }
 
+    async query(queryObject: QueryObject) {
+        // getLogger().info(`QueryHelper.query()`)
+        await this.initializeData(queryObject)
+        
         const queryResult = await this.backend.query(
             `SELECT COUNT(*) AS count FROM ${this.tableName}`
         )
-
+        
         if (this.tabName === constants.REQUEST_SOURCE_QUERY_TAB) {
             this.rowCount = Number(queryResult[0]['count'])
         } else {
@@ -115,6 +118,7 @@ class QueryHelper {
         const values = replacePeriodWithUnderscoreInKey(result)
         const headers = createHeadersFromData(values)
 
+        const query = this.formatQueryString(queryObject.queryString)
         const querySchemaResult = await this.backend.query(`DESCRIBE ${query}`)
 
         return {
@@ -368,7 +372,6 @@ export class BackendWorker {
             awsConnection,
             region
         )
-        // await backend.initialize()
 
         return new BackendWorker(backend, tabName)
     }
@@ -381,6 +384,15 @@ export class BackendWorker {
     public exit(): void {
         // getLogger().info(`BackendWorker.exit()`)
         return process.exit()
+    }
+
+    async initializeData(message: any) {
+        const queryObject: QueryObject = {
+            pageNumber: 1,
+            pageSize: message.query.pageSize,
+            queryString: message.query.queryString,
+        }
+        await this.queryHelper.initializeData(queryObject)
     }
 
     async query(message: any) {
@@ -458,6 +470,23 @@ export class BackendWorker {
             path: exportPath,
         }
     }
+
+    getRowCount() {
+        return this.queryHelper.backend.getRowCount()
+    }
+
+    initializeSchema() {
+        this.queryHelper.backend.initializeSchema()
+    }
+
+    getSchema() {
+        return this.queryHelper.backend.getSchema()
+    }
+
+    getMetaData() {
+        return this.queryHelper.backend.getMetaData()
+    }
+    
 }
 
 ;(async () => {

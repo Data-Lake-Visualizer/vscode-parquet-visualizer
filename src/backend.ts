@@ -136,7 +136,7 @@ export abstract class Backend {
     abstract getRowCount(): number
 
     public async query(query: any): Promise<any[]> {
-        console.log(query)
+        // console.log(query)
         const startTime = performance.now()
 
         const queryResult = await this.queryImpl(query)

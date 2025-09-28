@@ -73,14 +73,6 @@ export class DuckDBBackend extends Backend {
             `)
         }
 
-        const startTime = performance.now()
-        const arrowIpc = await this.getSchemaImpl()
-        const endTime = performance.now()
-        const time = endTime - startTime
-        console.log(`GetSchemaImpl() resolve time: ${time} msec.`)
-
-        this.arrowSchema = tableFromIPC(arrowIpc).schema
-
         if (this.extensionName === constants.CSV_NAME_EXTENSION) {
             const path = this.getPathForQuery(this.uri);
             const readFn = this.getReadFunctionByFileType();
@@ -96,13 +88,30 @@ export class DuckDBBackend extends Backend {
         this.rowCount = Number(this.metadata[0]['num_rows'])
     }
 
+    async initializeSchema() {
+        const startTime = performance.now()
+        try {
+            const arrowIpc = await this.db.arrowIPCAll(`
+                SELECT * 
+                FROM query_result
+                LIMIT 1
+            `)
+            const endTime = performance.now()
+            const time = endTime - startTime
+            console.log(`GetSchemaImpl() resolve time: ${time} msec.`)
+
+            this.arrowSchema = tableFromIPC(arrowIpc).schema
+        } catch (e: any) {
+            this.dispose()
+            throw e
+        }
+    }
+
     getSchemaImpl(): any {
         try {
-            const path = this.getPathForQuery(this.uri);
-            const readFn = this.getReadFunctionByFileType();
             return this.db.arrowIPCAll(`
           SELECT * 
-          FROM ${readFn}('${path}')
+          FROM query_result
           LIMIT 1
         `)
         } catch (e: any) {

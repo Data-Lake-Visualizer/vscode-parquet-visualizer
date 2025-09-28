@@ -9,10 +9,8 @@ import * as vscode from 'vscode'
 import { DuckDbError } from 'duckdb-async'
 
 import type { BackendWorker } from './worker'
-import { Backend } from './backend'
 import { createHeadersFromData, getNonce, isRunningInWSL } from './util'
 import { Disposable } from './dispose'
-import { DuckDBBackend } from './duckdb-backend'
 import { ParquetWasmBackend } from './parquet-wasm-backend'
 import {
     affectsDocument,
@@ -34,7 +32,7 @@ import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 class CustomDocument extends Disposable implements vscode.CustomDocument {
     uri: vscode.Uri
-    backend: Backend
+    backend: string
     queryTabWorker: comlink.Remote<BackendWorker>
     dataTabWorker: comlink.Remote<BackendWorker>
     isQueryAble: boolean = false
@@ -56,26 +54,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         try {
             switch (backendName) {
                 case 'duckdb': {
-                    const backend = await DuckDBBackend.createAsync(
-                        uri,
-                        dateTimeFormatSettings,
-                        currentConnection,
-                        region
-                    )
-                    await backend.initialize()
-                    const totalItems = backend.getRowCount()
-
-                    const columnCount = backend.arrowSchema.fields.length
-                    getLogger().info(`File opened with DuckDB`)
-                    TelemetryManager.sendEvent('fileOpened', {
-                        backend: 'duckdb',
-                        numRows: totalItems.toString(),
-                        numColumns: columnCount.toString(),
-                    })
-
                     return new CustomDocument(
                         uri, 
-                        backend, 
+                        backendName, 
                         currentConnection,
                         region
                     )
@@ -96,7 +77,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
                     return new CustomDocument(
                         uri, 
-                        backend, 
+                        backendName, 
                         currentConnection
                     )
                 }
@@ -126,15 +107,11 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
             const error = err as DuckDbError
             if (error.errorType === 'Invalid' && document) {
-                const backend = await ParquetWasmBackend.createAsync(
-                    uri,
-                    dateTimeFormatSettings
-                )
                 TelemetryManager.sendEvent('fileParsingFallback', {
                     uri: uri.toJSON(),
                     backend: 'parquet-wasm',
                 })
-                return new CustomDocument(uri, backend)
+                return new CustomDocument(uri, 'parquet-wasm')
             }
 
             getLogger().error(error.message)
@@ -168,14 +145,13 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     private constructor(
         uri: vscode.Uri, 
-        backend: Backend, 
+        backend: string, 
         connection?: AWSProfile,
         region?: string
     ) {
         super()
         this.uri = uri
         this.backend = backend
-
         getLogger().debug(`CustomDocument.ctor()`)
 
         const dateTimeFormatSettings: DateTimeFormatSettings = {
@@ -200,7 +176,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         )
 
         // FIXME: Check if backend is of type ParquetWasm
-        if (this.backend instanceof DuckDBBackend) {
+        if (backend === 'duckdb') {
             this.isQueryAble = true
 
             const queryWorker = new Worker(workerPath, {
@@ -308,13 +284,12 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
      */
     dispose(): void {
         // console.log("CustomParquetDocument.dispose()");
-        this.backend.dispose()
         this._onDidDispose.fire()
 
-        if (this.backend instanceof DuckDBBackend) {
+        if (this.backend === 'duckdb') {
             this.queryTabWorker.exit()
             this.dataTabWorker.exit()
-        } else if (this.backend instanceof ParquetWasmBackend) {
+        } else if (this.backend === 'parquet-wasm') {
             this.dataTabWorker.exit()
         }
 
@@ -838,8 +813,14 @@ export class TabularDocumentEditorProvider
                 pageCount: 0,
             }
 
+            let schema, metadata
+            let totalRowCount: number = 0
+            let totalColumnCount: number = 0
+            let totalPageCount: number = 0
+
             try {
                 const isRunQueryOnStartup = runQueryOnStartup()
+                // If backend is duckdb
                 if (isRunQueryOnStartup && document.isQueryAble) {
                     getLogger().debug(
                         `TabularDocumentEditorProvider - runQueryOnStartup ${isRunQueryOnStartup}`
@@ -852,6 +833,9 @@ export class TabularDocumentEditorProvider
                             pageSize: pageSize,
                         },
                     }
+
+                    await document.queryTabWorker.initializeData(queryMessage)
+                    await document.queryTabWorker.initializeSchema()
 
                     getLogger().debug(
                         `TabularDocumentEditorProvider - queryTabWorker.query()`
@@ -866,7 +850,24 @@ export class TabularDocumentEditorProvider
                         rowCount: result.rowCount,
                         pageCount: result.pageCount,
                     }
+                    
+                    totalRowCount = await document.queryTabWorker.getRowCount()
+                    totalPageCount = Math.ceil(totalRowCount / pageSize)
+                                        
+                    schema = await document.queryTabWorker.getSchema()
+                    totalColumnCount = schema.length
+
+                    metadata = await document.queryTabWorker.getMetaData()
+
+                    getLogger().info(`File opened with DuckDB`)
+                    TelemetryManager.sendEvent('fileOpened', {
+                        backend: 'duckdb',
+                        numRows: totalRowCount.toString(),
+                        numColumns: totalColumnCount.toString(),
+                    })
+
                 } else {
+                    // If backend is parquet-wasm
                     const queryMessage = {
                         query: {
                             queryString: defaultQueryFromSettings,
@@ -880,6 +881,7 @@ export class TabularDocumentEditorProvider
 
                     const result =
                         await document.dataTabWorker.query(queryMessage)
+
                     tableData = {
                         result: result.result,
                         headers: result.headers,
@@ -887,33 +889,32 @@ export class TabularDocumentEditorProvider
                         rowCount: result.rowCount,
                         pageCount: result.pageCount,
                     }
+
+                    
+                    totalRowCount = await document.dataTabWorker.getRowCount()
+                    totalPageCount = Math.ceil(totalRowCount / pageSize)
+                    
+                    await document.dataTabWorker.initializeSchema()
+                    schema = await document.dataTabWorker.getSchema()
+                    totalColumnCount = schema.length
+
+                    metadata = await document.dataTabWorker.getMetaData()
+
+                    getLogger().info(`File opened with Parquet WASM`)
+                    TelemetryManager.sendEvent('fileOpened', {
+                        backend: 'parquet-wasm',
+                        numRows: totalRowCount.toString(),
+                        numColumns: totalColumnCount.toString(),
+                    })
                 }
             } catch (error) {
                 getLogger().error('Error executing startup query', error)
                 vscode.window.showErrorMessage(
                     'Failed to run the initial query.'
                 )
+                throw error;
             }
 
-            let schema, metadata
-            let totalRowCount: number
-            let totalPageCount: number
-            try {
-                totalRowCount = document.backend.getRowCount()
-                totalPageCount = Math.ceil(totalRowCount / pageSize)
-
-                getLogger().debug('TabularDocumentEditorProvider - getSchema()')
-                schema = document.backend.getSchema()
-
-                getLogger().debug('TabularDocumentEditorProvider getMetaData()')
-                metadata = document.backend.getMetaData()
-            } catch (error) {
-                getLogger().error('Error retrieving schema or metadata', error)
-                vscode.window.showErrorMessage(
-                    'Failed to load schema or metadata.'
-                )
-                return
-            }
 
             const aceEditorCompletions = this.getAceEditorCompletions(schema)
             const aceTheme = getAceTheme(vscode.window.activeColorTheme.kind)
@@ -957,7 +958,7 @@ export class TabularDocumentEditorProvider
                                 `TabularDocumentEditorProvider send initial query Result`
                             )
 
-                            this.postMessage(webviewPanel, 'init', {
+                            await this.postMessage(webviewPanel, 'init', {
                                 tableData: queryTabData,
                             })
 
@@ -967,46 +968,6 @@ export class TabularDocumentEditorProvider
                                 )
                                 return
                             }
-
-                            void (async () => {
-                                const queryMessage = {
-                                    source: 'paginator',
-                                    query: {
-                                        queryString: defaultQueryFromSettings,
-                                        pageSize: pageSize,
-                                    },
-                                }
-    
-                                try {
-                                    const result =
-                                        await document.dataTabWorker.query(
-                                            queryMessage
-                                        )
-    
-                                    getLogger().debug(
-                                        `TabularDocumentEditorProvider resolved data tab data`
-                                    )
-    
-                                    document.fireChangedDocumentEvent(
-                                        result.result,
-                                        result.headers,
-                                        totalRowCount,
-                                        constants.REQUEST_SOURCE_DATA_TAB,
-                                        result.type,
-                                        result.pageSize,
-                                        result.pageNumber,
-                                        totalPageCount
-                                    )
-                                } catch (queryError) {
-                                    getLogger().error(
-                                        'Failed to get data for data tab',
-                                        queryError
-                                    )
-                                    vscode.window.showErrorMessage(
-                                        'Failed to get data for data tab.'
-                                    )
-                                }
-                            })()
                         }
                     } catch (messageError) {
                         getLogger().error(
@@ -1031,11 +992,11 @@ export class TabularDocumentEditorProvider
     public readonly onDidChangeCustomDocument =
         this._onDidChangeCustomDocument.event
 
-    private postMessage(
+    private async postMessage(
         panel: vscode.WebviewPanel,
         type: string,
         body: any
-    ): void {
+    ): Promise<void> {
         panel.webview.postMessage({ type, body })
     }
 
@@ -1123,7 +1084,97 @@ export class TabularDocumentEditorProvider
                 })
                 break
             }
+
+            case 'queryTabLoaded': {
+                console.log('queryTabLoaded')
+                await this.initDataTab(document)
+                getLogger().debug(
+                    `TabularDocumentEditorProvider queryTabLoaded`
+                )
+
+                break
+            }
         }
+    }
+
+    private async initDataTab(document: CustomDocument){
+        const defaultQueryFromSettings = defaultQuery()
+        
+        const defaultPageSizesFromSettings = defaultPageSizes()
+        const firstPageSize = defaultPageSizesFromSettings[0]
+        const pageSize = Number(firstPageSize)
+        
+        const defaultRunQueryKeyBindingFromSettings =
+                defaultRunQueryKeyBinding()
+        const shortCutMapping = this.createShortcutMapping(
+            defaultRunQueryKeyBindingFromSettings
+        )
+        const queryMessage = {
+            source: 'paginator',
+            query: {
+                queryString: 'SELECT * FROM data',
+                pageSize: pageSize,
+            },
+        }
+
+        await document.dataTabWorker.initializeData(queryMessage)
+        await document.dataTabWorker.initializeSchema()
+
+        const totalRowCount = await document.dataTabWorker.getRowCount()
+        const totalPageCount = Math.ceil(totalRowCount / pageSize)
+
+        try {
+            const result =
+                await document.dataTabWorker.query(
+                    queryMessage
+                )
+
+            const tableData = {
+                result: result.result,
+                headers: result.headers,
+                schema: result.schema,
+                rowCount: result.rowCount,
+                pageCount: result.pageCount,
+            }
+
+            const dataTabData = {
+                headers: tableData.headers,
+                schema: tableData.schema,
+                rawData: tableData.result,
+                rowCount: tableData.rowCount,
+                pageCount: tableData.pageCount,
+                requestSource: constants.REQUEST_SOURCE_DATA_TAB,
+                requestType: result.type,
+                isQueryAble: document.isQueryAble,
+                totalRowCount: totalRowCount,
+                totalPageCount: totalPageCount,
+                settings: {
+                    defaultQuery: defaultQueryFromSettings,
+                    defaultPageSizes: defaultPageSizesFromSettings,
+                    shortCutMapping: shortCutMapping,
+                },
+            }
+            
+
+            for (const webviewPanel of this.webviews.get(document.uri)) {
+                await this.postMessage(webviewPanel, 'init', {
+                    tableData: dataTabData,
+                })
+            }
+
+            getLogger().debug(
+                `TabularDocumentEditorProvider resolved data tab data`
+            )
+        } catch (queryError) {
+            getLogger().error(
+                'Failed to get data for data tab',
+                queryError
+            )
+            vscode.window.showErrorMessage(
+                'Failed to get data for data tab.'
+            )
+        }
+
     }
 
     private fillTemplate(
