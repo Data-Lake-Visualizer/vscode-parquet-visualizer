@@ -12,3 +12,6 @@ data/parquet/*.parquet
 data/csv/*.csv
 
 logs
+
+
+.DS_Store

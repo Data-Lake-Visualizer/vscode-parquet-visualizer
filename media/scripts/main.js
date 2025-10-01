@@ -32,20 +32,10 @@
     let settingsAceEditor
 
     function initialize(/** @type {any} */ tableData) {
+        // console.log("initialize()")
         if (tableData) {
-            isQueryAble = tableData.isQueryAble
             defaultPageSizes = tableData.settings.defaultPageSizes
-            settingsAceEditor = {
-                defaultQuery: tableData.settings.defaultQuery,
-                shortCutMapping: tableData.settings.shortCutMapping,
-                theme: tableData.aceTheme,
-                aceEditorCompletions: tableData.aceEditorCompletions,
-            }
-
-            initSchemaTab(tableData.schemaTabData, tableData.schema)
-            initMetaDataTab(tableData.metaData)
-
-            if (!tableData.isQueryAble) {
+            if (tableData.requestSource === requestSourceDataTab) {
                 initDataTab(
                     tableData.rawData,
                     tableData.headers,
@@ -54,9 +44,20 @@
                     defaultPageSizes,
                     tableData.schema
                 )
-                // // NOTE: Make sure data tab is clicked if parquet-wasm
-                document.getElementById('data-tab')?.click()
-            } else {
+
+                if (!tableData.isQueryAble) {
+                    document.getElementById('data-tab')?.click()
+                }
+            } else if (tableData.requestSource === requestSourceQueryTab) {
+                settingsAceEditor = {
+                    defaultQuery: tableData.settings.defaultQuery,
+                    shortCutMapping: tableData.settings.shortCutMapping,
+                    theme: tableData.aceTheme,
+                    aceEditorCompletions: tableData.aceEditorCompletions,
+                }
+                initSchemaTab(tableData.schemaTabData, tableData.schema)
+                initMetaDataTab(tableData.metaData)
+
                 initQueryTab(
                     tableData.rawData,
                     tableData.headers,
@@ -66,14 +67,7 @@
                     tableData.schema,
                     settingsAceEditor
                 )
-                initDataTab(
-                    [],
-                    tableData.headers,
-                    tableData.totalPageCount,
-                    tableData.rowCount,
-                    tableData.settings.defaultPageSizes,
-                    tableData.schema
-                )
+                vscode.postMessage({ type: 'queryTabLoaded' })
             }
         }
     }
@@ -179,6 +173,7 @@
         /** @type {any} */ schemaQueryResult,
         /** @type {any} */ editorSettings
     ) {
+        console.log('initQueryTab()')
         const queryTab = tabManager.getTab(requestSourceQueryTab)
         queryTab?.addTable({
             schema: schemaQueryResult,
@@ -211,6 +206,7 @@
         queryTab?.tableWrapper?.build(data, columns, footerHTML)
 
         queryTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
+            console.log('queryTab tableBuilt')
             queryTab?.editor.initialize()
             queryTab?.editor.editorControls.initialize()
             queryTab?.resultControls.initialize()
@@ -306,6 +302,7 @@
         /** @type {any} */ defaultPageSizes,
         /** @type {any} */ schemaQueryResult
     ) {
+        // console.log('initDataTab()')
         const dataTab = tabManager.getTab(requestSourceDataTab)
         dataTab?.addTable({
             schema: schemaQueryResult,
@@ -338,6 +335,7 @@
         dataTab?.tableWrapper?.build(data, columns, footerHTML)
 
         dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
+            console.log('dataTab tableBuilt')
             dataTab?.resultControls.initialize()
             dataTab?.pagination?.initialize()
             dataTab?.sort.initialize()
@@ -376,11 +374,20 @@
             tab.pagination.pageNumber = pageNumber
             tab.tableWrapper.schema = schema
 
-            // TODO: how to re-initialize headers?
-            tab?.tableWrapper.table.setColumns(headers)
             tab?.tableWrapper.replaceData(data)
-            tab?.tableWrapper.clearAlert()
+
+            const columns = headers.map((c) => ({
+                ...c,
+                sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
+                    return 0
+                },
+                cellClick: onCellClick,
+                headerTooltip: true,
+            }))
+            tab?.tableWrapper.setColumns(columns)
             tab?.editor?.editorControls.reset()
+            tab?.sort.initialize()
+            tab?.tableWrapper.clearAlert()
         } else if (requestType === 'paginator') {
             tab.pagination.rowCount = rowCount
             tab.pagination.pageCount = pageCount

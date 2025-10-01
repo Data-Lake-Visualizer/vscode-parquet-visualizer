@@ -32,33 +32,24 @@ class Editor {
         const completer = {
             getCompletions: (editor, session, pos, prefix, callback) => {
                 const line = session.getLine(pos.row)
-                const charBeforeCursor = line[pos.column - 1] || ''
 
-                // Get the character immediately after the cursor
-                const charAfterCursor = line[pos.column] || ''
+                const quotesBefore = (
+                    line.slice(0, pos.column).match(/"/g) || []
+                ).length
+                const quotesAfter = (line.slice(pos.column).match(/"/g) || [])
+                    .length
+
+                // Cursor is inside quotes if there’s an odd number before and at least one more quote after
+                const insideQuotes = quotesBefore % 2 === 1 && quotesAfter > 0
 
                 const aceEditorCompletionsCopy = structuredClone(
                     this.aceEditorCompletions
                 )
                 aceEditorCompletionsCopy.forEach((c) => {
-                    if (charBeforeCursor === '"' && charAfterCursor === '"') {
+                    if (insideQuotes) {
                         // If the cursor is between a pair of quotes, offer relevant suggestions
+                        c.caption = c.value
                         c.value = c.value.replace(/['"]/g, '')
-                    } else if (charBeforeCursor === '"') {
-                        // If the cursor is right after an opening quote
-
-                        if (c.value.includes('"')) {
-                            c.value = c.value.replace(/^"/, '')
-                        } else {
-                            c.value = c.value + '"'
-                        }
-                    } else if (charAfterCursor === '"') {
-                        // If the cursor is right after an opening quote
-                        if (c.value.includes('"')) {
-                            c.value = c.value.replace(/"$/, '')
-                        } else {
-                            c.value = '"' + c.value
-                        }
                     }
                 })
 

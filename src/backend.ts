@@ -6,6 +6,7 @@ import date from 'date-and-time'
 
 import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 export abstract class Backend {
     public uri: vscode.Uri
@@ -20,13 +21,14 @@ export abstract class Backend {
         dateTimeFormat: DateTimeFormatSettings
     ) {
         this.uri = uri
-        this.extensionName = path.extname(this.uri.fsPath)
+        this.extensionName = path.extname(this.uri.path)
         this.dateTimeFormat = dateTimeFormat
     }
 
     static createAsync(
         uri: vscode.Uri,
         dateTimeFormat: DateTimeFormatSettings
+        // currentConnection: AWSProfile
     ): Promise<any> {
         throw new Error('Method not implemented')
     }
@@ -134,6 +136,7 @@ export abstract class Backend {
     abstract getRowCount(): number
 
     public async query(query: any): Promise<any[]> {
+        // console.log(query)
         const startTime = performance.now()
 
         const queryResult = await this.queryImpl(query)

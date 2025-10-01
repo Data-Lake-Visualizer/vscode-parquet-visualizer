@@ -245,6 +245,10 @@ class Pagination {
             document.querySelector(`#btn-last-${this.tab.name}`)
         )
 
+        if (!nextButton) {
+            return
+        }
+
         if (amountOfPages <= 1) {
             nextButton.setAttribute('disabled', '')
             prevButton.setAttribute('disabled', '')
@@ -279,10 +283,12 @@ class Pagination {
         const pageCounterSpan = /** @type {HTMLElement} */ (
             document.querySelector(`#page-counter-${this.tab.name}`)
         )
-        if (pageCount == 0) {
-            pageCounterSpan.style.display = 'none'
-        } else {
-            pageCounterSpan.style.display = 'block'
+        if (pageCounterSpan) {
+            if (pageCount == 0) {
+                pageCounterSpan.style.display = 'none'
+            } else {
+                pageCounterSpan.style.display = 'block'
+            }
         }
 
         const currentPageSpan = /** @type {HTMLElement} */ (
@@ -298,7 +304,7 @@ class Pagination {
                 currentPageSpan.innerText = this.pageNumber.toString()
                 countPageSpan.innerText = pageCount.toString()
             }
-        } else {
+        } else if (currentPageSpan && countPageSpan) {
             currentPageSpan.innerText = this.pageNumber.toString()
             countPageSpan.innerText = pageCount.toString()
         }

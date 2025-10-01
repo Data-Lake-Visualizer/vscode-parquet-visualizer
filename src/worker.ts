@@ -16,8 +16,9 @@ import {
     replacePeriodWithUnderscoreInKey,
     getPageCountFromInput,
 } from './util'
-import { DateTimeFormatSettings, SerializeableUri } from './types'
+import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 // import { getLogger } from './logger'
 
 if (!parentPort) {
@@ -78,15 +79,18 @@ class QueryHelper {
         }
     }
 
-    async query(queryObject: QueryObject) {
-        // getLogger().info(`QueryHelper.query()`)
-        let query = this.formatQueryString(queryObject.queryString)
-
+    async initializeData(queryObject: QueryObject) {
+        const query = this.formatQueryString(queryObject.queryString)
         await this.backend.query(
             `CREATE OR REPLACE TABLE ${this.tableName} AS 
             ${query}
         `
         )
+    }
+
+    async query(queryObject: QueryObject) {
+        // getLogger().info(`QueryHelper.query()`)
+        await this.initializeData(queryObject)
 
         const queryResult = await this.backend.query(
             `SELECT COUNT(*) AS count FROM ${this.tableName}`
@@ -114,6 +118,7 @@ class QueryHelper {
         const values = replacePeriodWithUnderscoreInKey(result)
         const headers = createHeadersFromData(values)
 
+        const query = this.formatQueryString(queryObject.queryString)
         const querySchemaResult = await this.backend.query(`DESCRIBE ${query}`)
 
         return {
@@ -211,11 +216,14 @@ class QueryHelper {
             throw new Error("Query string must contain 'FROM data'")
         }
 
+        const path = this.backend.getPathForQuery(this.backend.uri)
+        const readFn = this.backend.getReadFunctionByFileType()
+
         return query.replace(
             pattern,
             `
-      FROM ${this.backend.getReadFunctionByFileType()}
-      ('${this.backend.uri.fsPath}')
+      FROM ${readFn}
+      ('${path}')
     `
         )
     }
@@ -228,9 +236,12 @@ class QueryHelper {
         let tableName
         if (message.tabName === constants.REQUEST_SOURCE_SCHEMA_TAB) {
             tableName = 'schema_result'
+
+            const path = this.backend.getPathForQuery(this.backend.uri)
+            const readFn = this.backend.getReadFunctionByFileType()
             const query = `
                 CREATE TABLE ${tableName} AS SELECT * FROM (
-                    DESCRIBE SELECT * FROM ${this.backend.getReadFunctionByFileType()}('${this.backend.uri.fsPath}')
+                    DESCRIBE SELECT * FROM ${readFn}('${path}')
                 )
             `
             await this.backend.query(query)
@@ -349,24 +360,39 @@ export class BackendWorker {
 
     static async create(
         tabName: string,
-        serializeableUri: SerializeableUri,
-        dateTimeFormatSettings: DateTimeFormatSettings
+        uri: URI,
+        dateTimeFormatSettings: DateTimeFormatSettings,
+        // awsConnection?: AWSProfile,
+        region?: string
     ) {
         // getLogger().info(`BackendWorker.create()`)
-        const path = `${serializeableUri.scheme}://${serializeableUri.path}`
-        const uri = URI.parse(path, true)
         const backend = await DuckDBBackend.createAsync(
             uri,
-            dateTimeFormatSettings
+            dateTimeFormatSettings,
+            // awsConnection,
+            region
         )
-        await backend.initialize()
 
         return new BackendWorker(backend, tabName)
+    }
+
+    public async init(): Promise<void> {
+        // getLogger().info(`BackendWorker.init()`)
+        await this.queryHelper.backend.initialize()
     }
 
     public exit(): void {
         // getLogger().info(`BackendWorker.exit()`)
         return process.exit()
+    }
+
+    async initializeData(message: any) {
+        const queryObject: QueryObject = {
+            pageNumber: 1,
+            pageSize: message.query.pageSize,
+            queryString: message.query.queryString,
+        }
+        await this.queryHelper.initializeData(queryObject)
     }
 
     async query(message: any) {
@@ -444,13 +470,40 @@ export class BackendWorker {
             path: exportPath,
         }
     }
+
+    getRowCount() {
+        return this.queryHelper.backend.getRowCount()
+    }
+
+    initializeSchema() {
+        this.queryHelper.backend.initializeSchema()
+    }
+
+    getSchema() {
+        return this.queryHelper.backend.getSchema()
+    }
+
+    getMetaData() {
+        return this.queryHelper.backend.getMetaData()
+    }
 }
 
 ;(async () => {
+    const uri = workerData.uri
+    const parsedUri = URI.from({
+        scheme: uri.scheme,
+        authority: uri.authority,
+        fragment: uri.fragment,
+        path: uri.path,
+        query: uri.query,
+    })
+    workerData.uri
     const worker = await BackendWorker.create(
         workerData.tabName,
-        workerData.uri,
-        workerData.dateTimeFormatSettings
+        parsedUri,
+        workerData.dateTimeFormatSettings,
+        // workerData?.awsConnection,
+        workerData?.region
     )
 
     comlink.expose(worker, nodeEndpoint(parentPort))
