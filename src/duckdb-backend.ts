@@ -89,16 +89,16 @@ export class DuckDBBackend extends Backend {
     }
 
     async initializeSchema() {
-        const startTime = performance.now()
+        // const startTime = performance.now()
         try {
             const arrowIpc = await this.db.arrowIPCAll(`
                 SELECT * 
                 FROM query_result
                 LIMIT 1
             `)
-            const endTime = performance.now()
-            const time = endTime - startTime
-            console.log(`GetSchemaImpl() resolve time: ${time} msec.`)
+            // const endTime = performance.now()
+            // const time = endTime - startTime
+            // console.log(`GetSchemaImpl() resolve time: ${time} msec.`)
 
             this.arrowSchema = tableFromIPC(arrowIpc).schema
         } catch (e: any) {

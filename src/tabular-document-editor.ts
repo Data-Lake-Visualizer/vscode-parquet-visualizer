@@ -1089,7 +1089,7 @@ export class TabularDocumentEditorProvider
             }
 
             case 'queryTabLoaded': {
-                console.log('queryTabLoaded')
+                // console.log('queryTabLoaded')
                 await this.initDataTab(document)
                 getLogger().debug(
                     `TabularDocumentEditorProvider queryTabLoaded`
