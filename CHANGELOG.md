@@ -1,3 +1,15 @@
+# [0.29.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.28.0...v0.29.0) (2025-10-01)
+
+
+### Bug Fixes
+
+* popup after new query run works again ([8604123](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/86041234a98ae04af26e8fc472fd70a009f7fc0d))
+
+
+### Features
+
+* add working aws remote ([8dcd8bf](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/8dcd8bf49b07e6388a5f1d7cf6fae4d237252edd))
+
 # [0.28.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.27.0...v0.28.0) (2025-03-04)
 
 
