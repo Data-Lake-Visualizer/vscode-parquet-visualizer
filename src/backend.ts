@@ -6,7 +6,7 @@ import date from 'date-and-time'
 
 import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
-import { AWSProfile } from './pro/aws/aws-profile-helper'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 export abstract class Backend {
     public uri: vscode.Uri
@@ -28,7 +28,7 @@ export abstract class Backend {
     static createAsync(
         uri: vscode.Uri,
         dateTimeFormat: DateTimeFormatSettings,
-        currentConnection: AWSProfile
+        // currentConnection: AWSProfile
     ): Promise<any> {
         throw new Error('Method not implemented')
     }

@@ -28,7 +28,7 @@ import { TelemetryManager } from './telemetry'
 import { getLogger } from './logger'
 
 import * as constants from './constants'
-import { AWSProfile } from './pro/aws/aws-profile-helper'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 class CustomDocument extends Disposable implements vscode.CustomDocument {
     uri: vscode.Uri
@@ -41,7 +41,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
     static async create(
         uri: vscode.Uri,
-        currentConnection?: AWSProfile,
+        // currentConnection?: AWSProfile,
         region?: string
     ): Promise<CustomDocument | PromiseLike<CustomDocument>> {
         getLogger().debug(`CustomDocument.create(${uri})`)
@@ -57,7 +57,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     return new CustomDocument(
                         uri,
                         backendName,
-                        currentConnection,
+                        // currentConnection,
                         region
                     )
                 }
@@ -78,7 +78,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     return new CustomDocument(
                         uri,
                         backendName,
-                        currentConnection
+                        // currentConnection
                     )
                 }
                 default:
@@ -146,7 +146,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
     private constructor(
         uri: vscode.Uri,
         backend: string,
-        connection?: AWSProfile,
+        // connection?: AWSProfile,
         region?: string
     ) {
         super()
@@ -166,7 +166,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 tabName: constants.REQUEST_SOURCE_DATA_TAB,
                 uri: uri,
                 dateTimeFormatSettings: dateTimeFormatSettings,
-                awsConnection: connection,
+                // awsConnection: connection,
                 region: region,
             },
         })
@@ -184,7 +184,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                     tabName: constants.REQUEST_SOURCE_QUERY_TAB,
                     uri: uri,
                     dateTimeFormatSettings: dateTimeFormatSettings,
-                    awsConnection: connection,
+                    // awsConnection: connection,
                     region: region,
                 },
             })
@@ -564,15 +564,15 @@ export class TabularDocumentEditorProvider
         )
         // console.log(`openCustomDocument(uri: ${uri})`);
 
-        const currentConnection = this.context.globalState.get<AWSProfile>(
-            'parquet-visualizer.currentConnection'
-        )
+        // const currentConnection = this.context.globalState.get<AWSProfile>(
+        //     'parquet-visualizer.currentConnection'
+        // )
         const region = this.context.workspaceState.get<string>(
             'parquet-visualizer.currentSelectedRegion'
         )
         const document: CustomDocument = await CustomDocument.create(
             uri,
-            currentConnection,
+            // currentConnection,
             region
         )
 

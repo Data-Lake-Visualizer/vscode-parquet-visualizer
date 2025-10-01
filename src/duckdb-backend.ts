@@ -7,7 +7,7 @@ import { tableFromIPC, Schema } from 'apache-arrow'
 import { Backend } from './backend'
 import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
-import { AWSProfile } from './pro/aws/aws-profile-helper'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 export class DuckDBBackend extends Backend {
     private db: duckdb.Database
@@ -15,26 +15,26 @@ export class DuckDBBackend extends Backend {
     public metadata: any
     public rowCount: number
 
-    private awsProfile: AWSProfile | undefined
+    // private awsProfile: AWSProfile | undefined
     private region: string | undefined
 
     constructor(
         uri: vscode.Uri,
         dateTimeFormatSettings: DateTimeFormatSettings,
         db: duckdb.Database,
-        awsProfile?: AWSProfile,
+        // awsProfile?: AWSProfile,
         region?: string
     ) {
         super(uri, dateTimeFormatSettings)
         this.db = db
-        this.awsProfile = awsProfile
+        // this.awsProfile = awsProfile
         this.region = region
     }
 
     public static override async createAsync(
         uri: vscode.Uri,
         dateTimeFormatSettings: DateTimeFormatSettings,
-        currentConnection?: AWSProfile,
+        // currentConnection?: AWSProfile,
         region?: string
     ) {
         const db = await duckdb.Database.create(':memory:')
@@ -42,7 +42,7 @@ export class DuckDBBackend extends Backend {
             uri,
             dateTimeFormatSettings,
             db,
-            currentConnection,
+            // currentConnection,
             region
         )
     }
@@ -57,21 +57,21 @@ export class DuckDBBackend extends Backend {
 
           SET threads = ${cores * 2}
         `)
-        if (this.uri.scheme !== 'file') {
-            const sessionTokenLine = this.awsProfile?.sessionToken
-                ? `,\n    SESSION_TOKEN '${this.awsProfile.sessionToken}'`
-                : ''
+        // if (this.uri.scheme !== 'file') {
+        //     const sessionTokenLine = this.awsProfile?.sessionToken
+        //         ? `,\n    SESSION_TOKEN '${this.awsProfile.sessionToken}'`
+        //         : ''
 
-            // TODO: pass region
-            await this.db.all(`    
-              CREATE OR REPLACE SECRET secret (
-                    TYPE s3,
-                    KEY_ID '${this.awsProfile?.accessKeyId}',
-                    SECRET '${this.awsProfile?.secretAccessKey}'${sessionTokenLine},
-                    REGION '${this.region}'
-              );
-            `)
-        }
+        //     // TODO: pass region
+        //     await this.db.all(`    
+        //       CREATE OR REPLACE SECRET secret (
+        //             TYPE s3,
+        //             KEY_ID '${this.awsProfile?.accessKeyId}',
+        //             SECRET '${this.awsProfile?.secretAccessKey}'${sessionTokenLine},
+        //             REGION '${this.region}'
+        //       );
+        //     `)
+        // }
 
         if (this.extensionName === constants.CSV_NAME_EXTENSION) {
             const path = this.getPathForQuery(this.uri)

@@ -18,7 +18,7 @@ import {
 } from './util'
 import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
-import { AWSProfile } from './pro/aws/aws-profile-helper'
+// import { AWSProfile } from './pro/aws/aws-profile-helper'
 // import { getLogger } from './logger'
 
 if (!parentPort) {
@@ -362,14 +362,14 @@ export class BackendWorker {
         tabName: string,
         uri: URI,
         dateTimeFormatSettings: DateTimeFormatSettings,
-        awsConnection?: AWSProfile,
+        // awsConnection?: AWSProfile,
         region?: string
     ) {
         // getLogger().info(`BackendWorker.create()`)
         const backend = await DuckDBBackend.createAsync(
             uri,
             dateTimeFormatSettings,
-            awsConnection,
+            // awsConnection,
             region
         )
 
@@ -502,7 +502,7 @@ export class BackendWorker {
         workerData.tabName,
         parsedUri,
         workerData.dateTimeFormatSettings,
-        workerData?.awsConnection,
+        // workerData?.awsConnection,
         workerData?.region
     )
 
