@@ -77,7 +77,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
                     return new CustomDocument(
                         uri,
-                        backendName,
+                        backendName
                         // currentConnection
                     )
                 }

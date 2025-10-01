@@ -63,7 +63,7 @@ export class DuckDBBackend extends Backend {
         //         : ''
 
         //     // TODO: pass region
-        //     await this.db.all(`    
+        //     await this.db.all(`
         //       CREATE OR REPLACE SECRET secret (
         //             TYPE s3,
         //             KEY_ID '${this.awsProfile?.accessKeyId}',

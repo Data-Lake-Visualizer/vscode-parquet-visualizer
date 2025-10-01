@@ -33,11 +33,14 @@ class Editor {
             getCompletions: (editor, session, pos, prefix, callback) => {
                 const line = session.getLine(pos.row)
 
-                const quotesBefore = (line.slice(0, pos.column).match(/"/g) || []).length;
-                const quotesAfter = (line.slice(pos.column).match(/"/g) || []).length;
+                const quotesBefore = (
+                    line.slice(0, pos.column).match(/"/g) || []
+                ).length
+                const quotesAfter = (line.slice(pos.column).match(/"/g) || [])
+                    .length
 
                 // Cursor is inside quotes if there’s an odd number before and at least one more quote after
-                const insideQuotes = quotesBefore % 2 === 1 && quotesAfter > 0;
+                const insideQuotes = quotesBefore % 2 === 1 && quotesAfter > 0
 
                 const aceEditorCompletionsCopy = structuredClone(
                     this.aceEditorCompletions

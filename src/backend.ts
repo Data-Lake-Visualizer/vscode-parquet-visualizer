@@ -27,7 +27,7 @@ export abstract class Backend {
 
     static createAsync(
         uri: vscode.Uri,
-        dateTimeFormat: DateTimeFormatSettings,
+        dateTimeFormat: DateTimeFormatSettings
         // currentConnection: AWSProfile
     ): Promise<any> {
         throw new Error('Method not implemented')
