@@ -1,16 +1,20 @@
 import os from 'os'
 
-import * as duckdb from 'duckdb-async'
+import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api'
 import * as vscode from 'vscode'
 import { tableFromIPC, Schema } from 'apache-arrow'
 
 import { Backend } from './backend'
 import { DateTimeFormatSettings } from './types'
 import * as constants from './constants'
+import { parseTypeString } from './duckdb-schema-converter'
 // import { AWSProfile } from './pro/aws/aws-profile-helper'
 
 export class DuckDBBackend extends Backend {
-    private db: duckdb.Database
+    private db: DuckDBInstance
+    private connection: DuckDBConnection
+
+    public duckDbSchema: any
     public arrowSchema: Schema<any>
     public metadata: any
     public rowCount: number
@@ -21,7 +25,7 @@ export class DuckDBBackend extends Backend {
     constructor(
         uri: vscode.Uri,
         dateTimeFormatSettings: DateTimeFormatSettings,
-        db: duckdb.Database,
+        db: DuckDBInstance,
         // awsProfile?: AWSProfile,
         region?: string
     ) {
@@ -37,7 +41,7 @@ export class DuckDBBackend extends Backend {
         // currentConnection?: AWSProfile,
         region?: string
     ) {
-        const db = await duckdb.Database.create(':memory:')
+        const db = await DuckDBInstance.create(':memory:')
         return new DuckDBBackend(
             uri,
             dateTimeFormatSettings,
@@ -50,9 +54,10 @@ export class DuckDBBackend extends Backend {
     dispose() {}
 
     public async initialize() {
+        this.connection = await this.db.connect()
+
         const cores = os.cpus().length
-        await this.db.all(`
-          INSTALL arrow; LOAD arrow;
+        await this.connection.runAndReadAll(`
           INSTALL spatial; LOAD spatial;
 
           SET threads = ${cores * 2}
@@ -76,10 +81,11 @@ export class DuckDBBackend extends Backend {
         if (this.extensionName === constants.CSV_NAME_EXTENSION) {
             const path = this.getPathForQuery(this.uri)
             const readFn = this.getReadFunctionByFileType()
-            const queryResult = await this.db.all(`
+            const reader = await this.connection.runAndReadAll(`
           SELECT COUNT(*) 
           FROM ${readFn}('${path}')
         `)
+            const queryResult = reader.getRowObjects()
             this.rowCount = Number(queryResult[0]['count_star()'])
             return
         }
@@ -91,50 +97,49 @@ export class DuckDBBackend extends Backend {
     async initializeSchema() {
         // const startTime = performance.now()
         try {
-            const arrowIpc = await this.db.arrowIPCAll(`
-                SELECT * 
-                FROM query_result
-                LIMIT 1
+            const reader = await this.connection.runAndReadAll(`
+                DESCRIBE SELECT * FROM query_result
             `)
-            // const endTime = performance.now()
-            // const time = endTime - startTime
-            // console.log(`GetSchemaImpl() resolve time: ${time} msec.`)
+            this.duckDbSchema = reader.getRowObjects()
 
-            this.arrowSchema = tableFromIPC(arrowIpc).schema
+            // Extend each schema object with converted arrow column type
+            this.duckDbSchema = this.duckDbSchema.map((row: any) => {
+                const arrowColumnType = parseTypeString(row.column_type)
+                return {
+                    ...row,
+                    arrow_column_type: arrowColumnType,
+                    arrow_column_type_json:
+                        typeof arrowColumnType === 'string'
+                            ? arrowColumnType
+                            : JSON.stringify(arrowColumnType),
+                }
+            })
         } catch (e: any) {
             this.dispose()
             throw e
         }
     }
 
-    getSchemaImpl(): any {
-        try {
-            return this.db.arrowIPCAll(`
-          SELECT * 
-          FROM query_result
-          LIMIT 1
-        `)
-        } catch (e: any) {
-            this.dispose()
-            throw e
-        }
-    }
+    getSchemaImpl(): any {}
 
-    getMetaDataImpl(): Promise<any> {
+    async getMetaDataImpl(): Promise<any> {
         try {
             const path = this.getPathForQuery(this.uri)
-            return this.db.all(`
+            const reader = await this.connection.runAndReadAll(`
           SELECT * 
           FROM parquet_file_metadata('${path}')
         `)
+            return reader.getRowObjects()
         } catch (e: any) {
             this.dispose()
             throw e
         }
     }
 
-    queryImpl(query: any): Promise<any> {
-        return this.db.all(query)
+    async queryImpl(query: any): Promise<any> {
+        const result = await this.connection.runAndReadAll(query)
+        const rows = result.getRowObjectsJson()
+        return rows
     }
 
     public getRowCount(): number {

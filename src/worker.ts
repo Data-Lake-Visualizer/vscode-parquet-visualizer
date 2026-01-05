@@ -131,24 +131,23 @@ class QueryHelper {
 
     async search(message: any) {
         // getLogger().info(`QueryHelper.search()`)
-        let schemaQuery = `
-        SELECT * FROM ${this.tableName}
-        `
         const searchString = message.query.searchString
-
         let tableName = ''
-        let query = ''
+
         if (searchString === undefined || searchString === '') {
+            // No search string - use existing query_result table without executing any query
             tableName = this.tableName
-            query = schemaQuery
         } else {
+            // Search string provided - create filtered table
             tableName = this.filteredTableName
-            query = `
+
+            let schemaQuery = `
+            SELECT * FROM ${this.tableName}
+            `
+            let query = `
                 CREATE OR REPLACE TABLE ${this.filteredTableName} AS ${schemaQuery}
             `
-        }
 
-        if (searchString && searchString !== '') {
             const querySchemaResult = await this.backend.query(
                 `DESCRIBE ${schemaQuery}`
             )
@@ -161,21 +160,26 @@ class QueryHelper {
                 .join(' OR ')
 
             query += ` WHERE ${whereClause}`
+
+            if (
+                message.query.sort &&
+                message.query.sort.field &&
+                message.query.sort.direction
+            ) {
+                query += `
+              ORDER BY "${message.query.sort.field}" ${message.query.sort.direction.toUpperCase()}
+          `
+            }
+
+            // Execute the filtered query
+            await this.backend.query(query)
         }
 
-        if (message.query.sort) {
-            query += `
-          ORDER BY "${message.query.sort.field}" ${message.query.sort.direction.toUpperCase()}
-      `
-        }
-
-        await this.backend.query(query)
-
-        const queryResult = await this.backend.query(
+        const queryCountResult = await this.backend.query(
             `SELECT COUNT(*) AS count FROM ${tableName}`
         )
 
-        this.rowCount = Number(queryResult[0]['count'])
+        this.rowCount = Number(queryCountResult[0]['count'])
 
         const readFromFile = false
         this.paginator = new DuckDBPaginator(
@@ -255,12 +259,18 @@ class QueryHelper {
     `
 
         if (message.searchString && message.searchString !== '') {
-            const schema = this.backend.arrowSchema
-            const whereClause = schema.fields
-                .map((col) =>
-                    col.typeId === Type.Utf8 || col.typeId === Type.LargeUtf8
-                        ? `"${col.name}" LIKE '%${message.searchString}%'`
-                        : `CAST("${col.name}" AS TEXT) LIKE '%${message.searchString}%'`
+            // Use the DESCRIBE schema to check for string types
+            const duckDbSchema = this.backend.duckDbSchema
+            const whereClause = duckDbSchema
+                .map(
+                    (col: {
+                        column_name: string
+                        column_type: string
+                        arrow_column_type: any
+                    }) =>
+                        col.arrow_column_type === 'String'
+                            ? `"${col.column_name}" LIKE '%${message.searchString}%'`
+                            : `CAST("${col.column_name}" AS TEXT) LIKE '%${message.searchString}%'`
                 )
                 .join(' OR ')
 
@@ -328,7 +338,7 @@ class QueryHelper {
                 subQuery += ` WHERE ${whereClause}`
             }
 
-            if (message.sort) {
+            if (message.sort && message.sort.field && message.sort.direction) {
                 subQuery += `
             ORDER BY "${message.sort.field}" ${message.sort.direction.toUpperCase()}
         `

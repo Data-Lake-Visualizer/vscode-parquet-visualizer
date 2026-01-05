@@ -25,16 +25,21 @@
         vscode
     )
 
+    // Initialize data tab early with empty table
+    initDataTabEarly()
+
     let metadataTable
 
     let isQueryAble = false
     let defaultPageSizes
     let settingsAceEditor
+    let dataTabInitialized = false
 
     function initialize(/** @type {any} */ tableData) {
         // console.log("initialize()")
         if (tableData) {
             defaultPageSizes = tableData.settings.defaultPageSizes
+            isQueryAble = tableData.isQueryAble
             if (tableData.requestSource === requestSourceDataTab) {
                 initDataTab(
                     tableData.rawData,
@@ -55,7 +60,8 @@
                     theme: tableData.aceTheme,
                     aceEditorCompletions: tableData.aceEditorCompletions,
                 }
-                initSchemaTab(tableData.schemaTabData, tableData.schema)
+
+                initSchemaTab(tableData.schemaTabData)
                 initMetaDataTab(tableData.metaData)
 
                 initQueryTab(
@@ -173,7 +179,7 @@
         /** @type {any} */ schemaQueryResult,
         /** @type {any} */ editorSettings
     ) {
-        console.log('initQueryTab()')
+        // console.log('initQueryTab()')
         const queryTab = tabManager.getTab(requestSourceQueryTab)
         queryTab?.addTable({
             schema: schemaQueryResult,
@@ -206,7 +212,7 @@
         queryTab?.tableWrapper?.build(data, columns, footerHTML)
 
         queryTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log('queryTab tableBuilt')
+            // console.log('queryTab tableBuilt')
             queryTab?.editor.initialize()
             queryTab?.editor.editorControls.initialize()
             queryTab?.resultControls.initialize()
@@ -240,13 +246,10 @@
         metadataTable.on('popupOpened', onPopupOpenedMetaDataTab)
     }
 
-    function initSchemaTab(
-        /** @type {any} */ data,
-        /** @type {any} */ schemaQueryResult
-    ) {
+    function initSchemaTab(/** @type {any} */ schema) {
         const schemaTab = tabManager.getTab(requestSourceSchemaTab)
         schemaTab?.addTable({
-            schema: schemaQueryResult,
+            schema: schema,
         })
         schemaTab?.addResultControls({
             search: 'local',
@@ -261,36 +264,76 @@
             },
             {
                 title: 'Column name',
-                field: 'name',
+                field: 'column_name',
                 width: 150,
                 cellClick: onCellClick,
                 headerTooltip: true,
             },
             {
                 title: 'Data type',
-                field: 'type',
+                field: 'arrow_column_type_json',
                 width: 150,
                 cellClick: onCellClick,
                 headerTooltip: true,
             },
             {
                 title: 'Nullable',
-                field: 'nullable',
+                field: 'null',
                 width: 150,
                 headerTooltip: true,
             },
             {
                 title: 'Metadata',
-                field: 'metadata',
+                field: 'extra',
                 width: 150,
                 headerTooltip: true,
             },
         ]
 
-        schemaTab?.tableWrapper?.build(data, columns, undefined)
+        schema.forEach((se, i) => (se.index = i))
+
+        schemaTab?.tableWrapper?.build(schema, columns, undefined)
 
         schemaTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
             schemaTab?.resultControls.initialize()
+        })
+    }
+
+    function initDataTabEarly() {
+        // console.log('initDataTabEarly()')
+        const dataTab = tabManager.getTab(requestSourceDataTab)
+        dataTab?.addTable({
+            schema: [], // Empty schema initially
+        })
+
+        // Initialize table with empty data and placeholder columns - no controls yet
+        const emptyColumns = [
+            {
+                title: 'Loading...',
+                field: 'loading',
+                width: 150,
+                headerTooltip: true,
+            },
+        ]
+
+        // Build table without footer (no pagination bar yet)
+        dataTab?.tableWrapper?.build([], emptyColumns, undefined)
+
+        // Hide result controls container initially
+        const tableContainer = document.querySelector(
+            `#table-${requestSourceDataTab}`
+        )
+        if (tableContainer && tableContainer.parentElement) {
+            const tableActionsContainer =
+                tableContainer.parentElement.querySelector('.table-actions')
+            if (tableActionsContainer) {
+                tableActionsContainer.style.display = 'none'
+            }
+        }
+
+        dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
+            // console.log('dataTab tableBuilt (early initialization)')
+            // Don't initialize any controls yet - wait for real data
         })
     }
 
@@ -304,20 +347,36 @@
     ) {
         // console.log('initDataTab()')
         const dataTab = tabManager.getTab(requestSourceDataTab)
-        dataTab?.addTable({
-            schema: schemaQueryResult,
-        })
-        dataTab?.addResultControls({
-            search: 'remote',
-        })
-        dataTab?.addPagination({
-            enabled: true,
-            defaultPageSizes: defaultPageSizes,
-            pageCount: pageCount,
-            rowCount: rowCount,
-            isQueryAble: isQueryAble,
-        })
-        dataTab?.addSortFunctionality()
+
+        // Update schema
+        if (dataTab?.tableWrapper) {
+            dataTab.tableWrapper.schema = schemaQueryResult
+        }
+
+        // Add all the controls since we have real data
+        if (!dataTabInitialized) {
+            dataTab?.addResultControls({
+                search: 'remote',
+            })
+            dataTab?.addPagination({
+                enabled: true,
+                defaultPageSizes: defaultPageSizes,
+                pageCount: pageCount,
+                rowCount: rowCount,
+                isQueryAble: isQueryAble,
+            })
+            dataTab?.addSortFunctionality()
+
+            dataTabInitialized = true
+        } else {
+            // Update existing pagination with new data
+            if (dataTab?.pagination) {
+                dataTab.pagination.defaultPageSizes = defaultPageSizes
+                dataTab.pagination.pageCount = pageCount
+                dataTab.pagination.rowCount = rowCount
+                dataTab.pagination.isQueryable = isQueryAble
+            }
+        }
 
         let columns = headers.map((c) => ({
             ...c,
@@ -330,16 +389,67 @@
             headerTooltip: true,
         }))
 
-        const footerHTML = dataTab?.pagination.getFooterHTML()
+        // Update the existing table with real data and columns
+        dataTab?.tableWrapper?.setColumns(columns)
+        dataTab?.tableWrapper?.replaceData(data)
 
-        dataTab?.tableWrapper?.build(data, columns, footerHTML)
+        // Rebuild the table with proper footer HTML now that we have pagination
+        if (dataTab?.pagination) {
+            const footerHTML = dataTab.pagination.getFooterHTML()
+            if (footerHTML && dataTab?.tableWrapper?.table) {
+                // Destroy and rebuild the table with footer
+                dataTab.tableWrapper.table.destroy()
+                dataTab.tableWrapper.build(data, columns, footerHTML)
 
-        dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log('dataTab tableBuilt')
-            dataTab?.resultControls.initialize()
-            dataTab?.pagination?.initialize()
-            dataTab?.sort.initialize()
-        })
+                // Re-attach event listener for tableBuilt
+                dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
+                    // Initialize all the controls after table is rebuilt
+                    if (dataTab?.resultControls) {
+                        dataTab.resultControls.initialize()
+                    }
+                    if (dataTab?.pagination) {
+                        dataTab.pagination.initialize()
+                    }
+                    if (dataTab?.sort) {
+                        dataTab.sort.initialize()
+                    }
+
+                    // Show result controls container now that we have data
+                    const tableContainer = document.querySelector(
+                        `#table-${requestSourceDataTab}`
+                    )
+                    if (tableContainer && tableContainer.parentElement) {
+                        const tableActionsContainer =
+                            tableContainer.parentElement.querySelector(
+                                '.table-actions'
+                            )
+                        if (tableActionsContainer) {
+                            tableActionsContainer.style.display = 'flex'
+                        }
+                    }
+                })
+            }
+        } else {
+            // Fallback: Initialize controls directly if no pagination
+            if (dataTab?.resultControls) {
+                dataTab.resultControls.initialize()
+            }
+            if (dataTab?.sort) {
+                dataTab.sort.initialize()
+            }
+
+            // Show result controls container now that we have data
+            const tableContainer = document.querySelector(
+                `#table-${requestSourceDataTab}`
+            )
+            if (tableContainer && tableContainer.parentElement) {
+                const tableActionsContainer =
+                    tableContainer.parentElement.querySelector('.table-actions')
+                if (tableActionsContainer) {
+                    tableActionsContainer.style.display = 'flex'
+                }
+            }
+        }
     }
 
     function handleError(/** @type {string} */ source) {

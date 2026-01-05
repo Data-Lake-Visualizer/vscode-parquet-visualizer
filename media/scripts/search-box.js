@@ -127,7 +127,7 @@ class RemoteSearchBox extends SearchBox {
                 // queryString: queryString,
                 searchString: value,
                 pageSize: pageSize,
-                sort: this.tab.sort.sortQuery,
+                sort: this.tab.sort ? this.tab.sort.sortQuery : undefined,
             },
         })
     }
