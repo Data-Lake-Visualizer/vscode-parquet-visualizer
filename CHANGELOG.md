@@ -1,3 +1,10 @@
+## [0.30.1](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.0...v0.30.1) (2026-01-05)
+
+
+### Bug Fixes
+
+* update schema key references in getAceEditorCompletions method ([ef1d5c5](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/ef1d5c584f99229413273cb0b046389b33357a98))
+
 # [0.30.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.29.0...v0.30.0) (2026-01-05)
 
 
