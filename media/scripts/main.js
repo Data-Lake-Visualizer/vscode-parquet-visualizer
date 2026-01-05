@@ -550,7 +550,7 @@
 
     // Handle messages from the extension
     window.addEventListener('message', async (e) => {
-        console.log(e.data);
+        // console.log(e.data);
         const { type, body } = e.data
         switch (type) {
             case 'init': {
