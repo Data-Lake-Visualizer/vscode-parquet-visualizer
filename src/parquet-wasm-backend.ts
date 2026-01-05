@@ -83,7 +83,7 @@ export class ParquetWasmBackend extends Backend {
         ]
     }
 
-    protected queryImpl(query: any): Promise<any[]> {
+    protected async queryImpl(query: any): Promise<any[]> {
         throw new Error('Method not implemented.')
     }
 }

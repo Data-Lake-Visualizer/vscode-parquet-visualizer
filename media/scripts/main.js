@@ -55,9 +55,10 @@
                     theme: tableData.aceTheme,
                     aceEditorCompletions: tableData.aceEditorCompletions,
                 }
-                initSchemaTab(tableData.schemaTabData, tableData.schema)
-                initMetaDataTab(tableData.metaData)
 
+                initSchemaTab(tableData.schemaTabData)
+                initMetaDataTab(tableData.metaData)
+                
                 initQueryTab(
                     tableData.rawData,
                     tableData.headers,
@@ -173,7 +174,7 @@
         /** @type {any} */ schemaQueryResult,
         /** @type {any} */ editorSettings
     ) {
-        console.log('initQueryTab()')
+        // console.log('initQueryTab()')
         const queryTab = tabManager.getTab(requestSourceQueryTab)
         queryTab?.addTable({
             schema: schemaQueryResult,
@@ -206,7 +207,7 @@
         queryTab?.tableWrapper?.build(data, columns, footerHTML)
 
         queryTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log('queryTab tableBuilt')
+            // console.log('queryTab tableBuilt')
             queryTab?.editor.initialize()
             queryTab?.editor.editorControls.initialize()
             queryTab?.resultControls.initialize()
@@ -241,12 +242,11 @@
     }
 
     function initSchemaTab(
-        /** @type {any} */ data,
-        /** @type {any} */ schemaQueryResult
+        /** @type {any} */ schema,
     ) {
         const schemaTab = tabManager.getTab(requestSourceSchemaTab)
         schemaTab?.addTable({
-            schema: schemaQueryResult,
+            schema: schema,
         })
         schemaTab?.addResultControls({
             search: 'local',
@@ -261,33 +261,37 @@
             },
             {
                 title: 'Column name',
-                field: 'name',
+                field: 'column_name',
                 width: 150,
                 cellClick: onCellClick,
                 headerTooltip: true,
             },
             {
                 title: 'Data type',
-                field: 'type',
+                field: 'arrow_column_type_json',
                 width: 150,
                 cellClick: onCellClick,
                 headerTooltip: true,
             },
             {
                 title: 'Nullable',
-                field: 'nullable',
+                field: 'null',
                 width: 150,
                 headerTooltip: true,
             },
             {
                 title: 'Metadata',
-                field: 'metadata',
+                field: 'extra',
                 width: 150,
                 headerTooltip: true,
             },
         ]
 
-        schemaTab?.tableWrapper?.build(data, columns, undefined)
+        schema.forEach((se, i) => 
+            se.index = i
+        )
+
+        schemaTab?.tableWrapper?.build(schema, columns, undefined)
 
         schemaTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
             schemaTab?.resultControls.initialize()
@@ -335,7 +339,7 @@
         dataTab?.tableWrapper?.build(data, columns, footerHTML)
 
         dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
-            console.log('dataTab tableBuilt')
+            // console.log('dataTab tableBuilt')
             dataTab?.resultControls.initialize()
             dataTab?.pagination?.initialize()
             dataTab?.sort.initialize()

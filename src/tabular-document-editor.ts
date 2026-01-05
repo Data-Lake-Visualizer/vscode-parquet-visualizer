@@ -6,7 +6,6 @@ import nodeEndpoint from 'comlink/dist/umd/node-adapter'
 const { exec } = require('child_process')
 
 import * as vscode from 'vscode'
-import { DuckDbError } from 'duckdb-async'
 
 import type { BackendWorker } from './worker'
 import { createHeadersFromData, getNonce, isRunningInWSL } from './util'
@@ -105,18 +104,11 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 stacktrace: stackTrace || 'No stack trace available',
             })
 
-            const error = err as DuckDbError
-            if (error.errorType === 'Invalid' && document) {
-                TelemetryManager.sendEvent('fileParsingFallback', {
-                    uri: uri.toJSON(),
-                    backend: 'parquet-wasm',
-                })
-                return new CustomDocument(uri, 'parquet-wasm')
-            }
-
-            getLogger().error(error.message)
-            vscode.window.showErrorMessage(error.message)
-            throw Error(error.message)
+            TelemetryManager.sendEvent('fileParsingFallback', {
+                uri: uri.toJSON(),
+                backend: 'parquet-wasm',
+            })
+            return new CustomDocument(uri, 'parquet-wasm')
         }
     }
 
@@ -375,13 +367,12 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             )
         } catch (e: unknown) {
             console.error(e)
-            const error = e as DuckDbError
             this.fireErrorEvent(
                 constants.REQUEST_SOURCE_QUERY_TAB,
-                error.message
+                e as string
             )
-            getLogger().error(error.message)
-            vscode.window.showErrorMessage(error.message)
+            getLogger().error(e as string)
+            vscode.window.showErrorMessage(e as string)
         }
     }
 
@@ -507,9 +498,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 })
         } catch (e: unknown) {
             console.error(e)
-            const error = e as DuckDbError
-            const errorMessage = `Export failed: ${error.message}`
-            getLogger().error(error.message)
+            const errorMessage = `Export failed: ${e}`
+            getLogger().error(e as string)
             vscode.window.showErrorMessage(errorMessage)
             this.fireErrorEvent(message.source, errorMessage)
         }
@@ -861,9 +851,9 @@ export class TabularDocumentEditorProvider
                     totalPageCount = Math.ceil(totalRowCount / pageSize)
 
                     schema = await document.queryTabWorker.getSchema()
-                    totalColumnCount = schema.length
-
                     metadata = await document.queryTabWorker.getMetaData()
+
+                    totalColumnCount = schema.length
 
                     getLogger().info(`File opened with DuckDB`)
                     TelemetryManager.sendEvent('fileOpened', {
@@ -900,9 +890,9 @@ export class TabularDocumentEditorProvider
 
                     await document.dataTabWorker.initializeSchema()
                     schema = await document.dataTabWorker.getSchema()
-                    totalColumnCount = schema.length
-
                     metadata = await document.dataTabWorker.getMetaData()
+
+                    totalColumnCount = schema.length
 
                     getLogger().info(`File opened with Parquet WASM`)
                     TelemetryManager.sendEvent('fileOpened', {

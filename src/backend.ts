@@ -12,6 +12,7 @@ export abstract class Backend {
     public uri: vscode.Uri
     public extensionName: string
     public arrowSchema: Schema
+    public duckDbSchema: any
     protected metadata: any
 
     private dateTimeFormat: DateTimeFormatSettings
@@ -35,61 +36,11 @@ export abstract class Backend {
 
     abstract initialize(): Promise<void>
 
-    private parseSchema(field: Field) {
-        if (field.typeId === Type.List) {
-            let result: any = []
 
-            if (field.type.children.length > 0) {
-                result = [this.parseSchema(field.type.children[0])]
-                return result
-            }
-            return result
-        }
-        if (field.typeId === Type.Struct) {
-            const result: any = {}
-            for (const child of field.type.children) {
-                result[child.name] = this.parseSchema(child)
-            }
-            return result
-        }
-
-        let type = field.type.toString()
-        if (type.includes('Utf8')) {
-            type = type.replace(/Utf8/g, 'String')
-        } else if (type.includes('LargeUtf8')) {
-            type = type.replace(/LargeUtf8/g, 'LargeString')
-        }
-
-        return type
-    }
 
     // TODO: define a type (interface) for the return type.
     public getSchema(): any {
-        const parsedSchema = this.arrowSchema.fields.map((f, index) => {
-            let parsedType = this.parseSchema(f)
-            let typeName = parsedType
-            let typeValue = parsedType
-
-            if (typeof parsedType === 'object') {
-                parsedType = JSON.stringify(parsedType)
-                typeName = 'object'
-            }
-
-            if (f.metadata.size > 0) {
-                console.log(f.metadata)
-            }
-            return {
-                index: index + 1,
-                name: f.name,
-                type: parsedType,
-                typeName: typeName,
-                typeValue: typeValue,
-                nullable: f.nullable,
-                metadata: JSON.stringify(f.metadata),
-            }
-        })
-
-        return parsedSchema
+        return this.duckDbSchema
     }
 
     abstract getSchemaImpl(): Promise<any>
@@ -141,8 +92,8 @@ export abstract class Backend {
 
         const queryResult = await this.queryImpl(query)
         const result = Object.entries(queryResult).map(([k, v]) => {
-            return this.convertObjectsToJSONStrings(
-                this.convertBigIntToString(k, v)
+            return this.convertObjectsToJSONStrings(v
+                // this.convertBigIntToString(k, v)
             )
         })
 

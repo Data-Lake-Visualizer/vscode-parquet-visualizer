@@ -255,12 +255,13 @@ class QueryHelper {
     `
 
         if (message.searchString && message.searchString !== '') {
-            const schema = this.backend.arrowSchema
-            const whereClause = schema.fields
-                .map((col) =>
-                    col.typeId === Type.Utf8 || col.typeId === Type.LargeUtf8
-                        ? `"${col.name}" LIKE '%${message.searchString}%'`
-                        : `CAST("${col.name}" AS TEXT) LIKE '%${message.searchString}%'`
+            // Use the DESCRIBE schema to check for string types
+            const duckDbSchema = this.backend.duckDbSchema
+            const whereClause = duckDbSchema
+                .map((col: { column_name: string; column_type: string; arrow_column_type: any }) =>
+                    col.arrow_column_type === 'String'
+                        ? `"${col.column_name}" LIKE '%${message.searchString}%'`
+                        : `CAST("${col.column_name}" AS TEXT) LIKE '%${message.searchString}%'`
                 )
                 .join(' OR ')
 
