@@ -140,7 +140,7 @@ class QueryHelper {
         } else {
             // Search string provided - create filtered table
             tableName = this.filteredTableName
-            
+
             let schemaQuery = `
             SELECT * FROM ${this.tableName}
             `
@@ -161,7 +161,11 @@ class QueryHelper {
 
             query += ` WHERE ${whereClause}`
 
-            if (message.query.sort && message.query.sort.field && message.query.sort.direction) {
+            if (
+                message.query.sort &&
+                message.query.sort.field &&
+                message.query.sort.direction
+            ) {
                 query += `
               ORDER BY "${message.query.sort.field}" ${message.query.sort.direction.toUpperCase()}
           `
@@ -258,10 +262,15 @@ class QueryHelper {
             // Use the DESCRIBE schema to check for string types
             const duckDbSchema = this.backend.duckDbSchema
             const whereClause = duckDbSchema
-                .map((col: { column_name: string; column_type: string; arrow_column_type: any }) =>
-                    col.arrow_column_type === 'String'
-                        ? `"${col.column_name}" LIKE '%${message.searchString}%'`
-                        : `CAST("${col.column_name}" AS TEXT) LIKE '%${message.searchString}%'`
+                .map(
+                    (col: {
+                        column_name: string
+                        column_type: string
+                        arrow_column_type: any
+                    }) =>
+                        col.arrow_column_type === 'String'
+                            ? `"${col.column_name}" LIKE '%${message.searchString}%'`
+                            : `CAST("${col.column_name}" AS TEXT) LIKE '%${message.searchString}%'`
                 )
                 .join(' OR ')
 

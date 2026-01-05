@@ -367,10 +367,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             )
         } catch (e: unknown) {
             console.error(e)
-            this.fireErrorEvent(
-                constants.REQUEST_SOURCE_QUERY_TAB,
-                e as string
-            )
+            this.fireErrorEvent(constants.REQUEST_SOURCE_QUERY_TAB, e as string)
             getLogger().error(e as string)
             vscode.window.showErrorMessage(e as string)
         }

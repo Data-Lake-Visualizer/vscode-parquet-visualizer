@@ -1,6 +1,6 @@
 import os from 'os'
 
-import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api';
+import { DuckDBInstance, DuckDBConnection } from '@duckdb/node-api'
 import * as vscode from 'vscode'
 import { tableFromIPC, Schema } from 'apache-arrow'
 
@@ -12,7 +12,7 @@ import { parseTypeString } from './duckdb-schema-converter'
 
 export class DuckDBBackend extends Backend {
     private db: DuckDBInstance
-    private connection: DuckDBConnection;
+    private connection: DuckDBConnection
 
     public duckDbSchema: any
     public arrowSchema: Schema<any>
@@ -54,7 +54,6 @@ export class DuckDBBackend extends Backend {
     dispose() {}
 
     public async initialize() {
-
         this.connection = await this.db.connect()
 
         const cores = os.cpus().length
@@ -102,27 +101,26 @@ export class DuckDBBackend extends Backend {
                 DESCRIBE SELECT * FROM query_result
             `)
             this.duckDbSchema = reader.getRowObjects()
-            
+
             // Extend each schema object with converted arrow column type
             this.duckDbSchema = this.duckDbSchema.map((row: any) => {
                 const arrowColumnType = parseTypeString(row.column_type)
                 return {
                     ...row,
                     arrow_column_type: arrowColumnType,
-                    arrow_column_type_json: typeof arrowColumnType === 'string' 
-                        ? arrowColumnType 
-                        : JSON.stringify(arrowColumnType)
+                    arrow_column_type_json:
+                        typeof arrowColumnType === 'string'
+                            ? arrowColumnType
+                            : JSON.stringify(arrowColumnType),
                 }
             })
-
         } catch (e: any) {
             this.dispose()
             throw e
         }
     }
 
-    getSchemaImpl(): any {
-    }
+    getSchemaImpl(): any {}
 
     async getMetaDataImpl(): Promise<any> {
         try {
@@ -131,7 +129,7 @@ export class DuckDBBackend extends Backend {
           SELECT * 
           FROM parquet_file_metadata('${path}')
         `)
-        return  reader.getRowObjects()
+            return reader.getRowObjects()
         } catch (e: any) {
             this.dispose()
             throw e

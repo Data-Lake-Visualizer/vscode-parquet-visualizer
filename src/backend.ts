@@ -36,8 +36,6 @@ export abstract class Backend {
 
     abstract initialize(): Promise<void>
 
-
-
     // TODO: define a type (interface) for the return type.
     public getSchema(): any {
         return this.duckDbSchema
@@ -92,9 +90,7 @@ export abstract class Backend {
 
         const queryResult = await this.queryImpl(query)
         const result = Object.entries(queryResult).map(([k, v]) => {
-            return this.convertObjectsToJSONStrings(v
-                // this.convertBigIntToString(k, v)
-            )
+            return this.convertObjectsToJSONStrings(v)
         })
 
         const endTime = performance.now()

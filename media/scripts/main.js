@@ -63,7 +63,7 @@
 
                 initSchemaTab(tableData.schemaTabData)
                 initMetaDataTab(tableData.metaData)
-                
+
                 initQueryTab(
                     tableData.rawData,
                     tableData.headers,
@@ -246,9 +246,7 @@
         metadataTable.on('popupOpened', onPopupOpenedMetaDataTab)
     }
 
-    function initSchemaTab(
-        /** @type {any} */ schema,
-    ) {
+    function initSchemaTab(/** @type {any} */ schema) {
         const schemaTab = tabManager.getTab(requestSourceSchemaTab)
         schemaTab?.addTable({
             schema: schema,
@@ -292,9 +290,7 @@
             },
         ]
 
-        schema.forEach((se, i) => 
-            se.index = i
-        )
+        schema.forEach((se, i) => (se.index = i))
 
         schemaTab?.tableWrapper?.build(schema, columns, undefined)
 
@@ -317,16 +313,19 @@
                 field: 'loading',
                 width: 150,
                 headerTooltip: true,
-            }
+            },
         ]
 
         // Build table without footer (no pagination bar yet)
         dataTab?.tableWrapper?.build([], emptyColumns, undefined)
 
         // Hide result controls container initially
-        const tableContainer = document.querySelector(`#table-${requestSourceDataTab}`)
+        const tableContainer = document.querySelector(
+            `#table-${requestSourceDataTab}`
+        )
         if (tableContainer && tableContainer.parentElement) {
-            const tableActionsContainer = tableContainer.parentElement.querySelector('.table-actions')
+            const tableActionsContainer =
+                tableContainer.parentElement.querySelector('.table-actions')
             if (tableActionsContainer) {
                 tableActionsContainer.style.display = 'none'
             }
@@ -348,7 +347,7 @@
     ) {
         // console.log('initDataTab()')
         const dataTab = tabManager.getTab(requestSourceDataTab)
-        
+
         // Update schema
         if (dataTab?.tableWrapper) {
             dataTab.tableWrapper.schema = schemaQueryResult
@@ -367,7 +366,7 @@
                 isQueryAble: isQueryAble,
             })
             dataTab?.addSortFunctionality()
-            
+
             dataTabInitialized = true
         } else {
             // Update existing pagination with new data
@@ -401,7 +400,7 @@
                 // Destroy and rebuild the table with footer
                 dataTab.tableWrapper.table.destroy()
                 dataTab.tableWrapper.build(data, columns, footerHTML)
-                
+
                 // Re-attach event listener for tableBuilt
                 dataTab?.tableWrapper.addEventListener('tableBuilt', (e) => {
                     // Initialize all the controls after table is rebuilt
@@ -414,11 +413,16 @@
                     if (dataTab?.sort) {
                         dataTab.sort.initialize()
                     }
-                    
+
                     // Show result controls container now that we have data
-                    const tableContainer = document.querySelector(`#table-${requestSourceDataTab}`)
+                    const tableContainer = document.querySelector(
+                        `#table-${requestSourceDataTab}`
+                    )
                     if (tableContainer && tableContainer.parentElement) {
-                        const tableActionsContainer = tableContainer.parentElement.querySelector('.table-actions')
+                        const tableActionsContainer =
+                            tableContainer.parentElement.querySelector(
+                                '.table-actions'
+                            )
                         if (tableActionsContainer) {
                             tableActionsContainer.style.display = 'flex'
                         }
@@ -433,17 +437,19 @@
             if (dataTab?.sort) {
                 dataTab.sort.initialize()
             }
-            
+
             // Show result controls container now that we have data
-            const tableContainer = document.querySelector(`#table-${requestSourceDataTab}`)
+            const tableContainer = document.querySelector(
+                `#table-${requestSourceDataTab}`
+            )
             if (tableContainer && tableContainer.parentElement) {
-                const tableActionsContainer = tableContainer.parentElement.querySelector('.table-actions')
+                const tableActionsContainer =
+                    tableContainer.parentElement.querySelector('.table-actions')
                 if (tableActionsContainer) {
                     tableActionsContainer.style.display = 'flex'
                 }
             }
         }
-
     }
 
     function handleError(/** @type {string} */ source) {

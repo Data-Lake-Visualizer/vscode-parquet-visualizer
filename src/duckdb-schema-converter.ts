@@ -1,18 +1,18 @@
 /**
  * Parses a DuckDB type string and converts it to Arrow format
- * 
+ *
  * @param typeString - The type string from DESCRIBE (e.g., "INTEGER", "STRUCT(a INTEGER, b VARCHAR)")
  * @returns The formatted type representation
  */
 export function parseTypeString(typeString: string): any {
     // Remove extra whitespace and normalize
     const cleanType = typeString.trim()
-    
+
     // Handle basic types first
     if (isBasicType(cleanType)) {
         return mapBasicTypeToArrow(cleanType)
     }
-    
+
     // Handle complex types
     if (cleanType.startsWith('STRUCT(')) {
         return parseStructType(cleanType)
@@ -25,7 +25,7 @@ export function parseTypeString(typeString: string): any {
     } else if (cleanType.startsWith('UNION(')) {
         return parseUnionType(cleanType)
     }
-    
+
     // If we can't parse it, return as-is but try to map basic patterns
     return mapBasicTypeToArrow(cleanType)
 }
@@ -35,20 +35,39 @@ export function parseTypeString(typeString: string): any {
  */
 function isBasicType(typeString: string): boolean {
     const basicTypes = [
-        'BOOLEAN', 'BOOL',
-        'TINYINT', 'SMALLINT', 'INTEGER', 'INT', 'BIGINT',
-        'UTINYINT', 'USMALLINT', 'UINTEGER', 'UBIGINT',
-        'REAL', 'FLOAT', 'DOUBLE', 'DECIMAL',
-        'VARCHAR', 'STRING', 'TEXT', 'CHAR',
-        'BLOB', 'BYTEA',
-        'DATE', 'TIME', 'TIMESTAMP',
-        'INTERVAL', 'UUID', 'JSON'
+        'BOOLEAN',
+        'BOOL',
+        'TINYINT',
+        'SMALLINT',
+        'INTEGER',
+        'INT',
+        'BIGINT',
+        'UTINYINT',
+        'USMALLINT',
+        'UINTEGER',
+        'UBIGINT',
+        'REAL',
+        'FLOAT',
+        'DOUBLE',
+        'DECIMAL',
+        'VARCHAR',
+        'STRING',
+        'TEXT',
+        'CHAR',
+        'BLOB',
+        'BYTEA',
+        'DATE',
+        'TIME',
+        'TIMESTAMP',
+        'INTERVAL',
+        'UUID',
+        'JSON',
     ]
-    
+
     const upperType = typeString.toUpperCase()
-    return basicTypes.some(basicType => 
-        upperType === basicType || 
-        upperType.startsWith(basicType + '(') // For types like DECIMAL(18,3)
+    return basicTypes.some(
+        (basicType) =>
+            upperType === basicType || upperType.startsWith(basicType + '(') // For types like DECIMAL(18,3)
     )
 }
 
@@ -57,7 +76,7 @@ function isBasicType(typeString: string): boolean {
  */
 function mapBasicTypeToArrow(typeString: string): string {
     const upperType = typeString.toUpperCase()
-    
+
     // Handle types with parameters (like DECIMAL(18,3))
     if (upperType.startsWith('DECIMAL(')) {
         const match = upperType.match(/DECIMAL\((\d+),?\s*(\d+)?\)/)
@@ -68,11 +87,11 @@ function mapBasicTypeToArrow(typeString: string): string {
         }
         return 'Decimal128(18, 3)'
     }
-    
+
     if (upperType.startsWith('VARCHAR(')) {
         return 'String'
     }
-    
+
     // Map basic types
     switch (upperType) {
         case 'BOOLEAN':
@@ -130,39 +149,41 @@ function mapBasicTypeToArrow(typeString: string): string {
  */
 function parseStructType(typeString: string): Record<string, any> {
     const result: Record<string, any> = {}
-    
+
     // Extract content between STRUCT( and )
     const match = typeString.match(/STRUCT\((.*)\)$/i)
     if (!match) {
         return {}
     }
-    
+
     const content = match[1]
     const fields = parseStructFields(content)
-    
+
     for (const field of fields) {
         result[field.name] = parseTypeString(field.type)
     }
-    
+
     return result
 }
 
 /**
  * Parses struct fields from a string like "a INTEGER, b VARCHAR, c STRUCT(x INTEGER)"
  */
-function parseStructFields(content: string): Array<{name: string, type: string}> {
-    const fields: Array<{name: string, type: string}> = []
+function parseStructFields(
+    content: string
+): Array<{ name: string; type: string }> {
+    const fields: Array<{ name: string; type: string }> = []
     const tokens = tokenizeStructFields(content)
-    
+
     for (let i = 0; i < tokens.length; i += 2) {
         if (i + 1 < tokens.length) {
             fields.push({
                 name: tokens[i],
-                type: tokens[i + 1]
+                type: tokens[i + 1],
             })
         }
     }
-    
+
     return fields
 }
 
@@ -174,10 +195,10 @@ function tokenizeStructFields(content: string): string[] {
     let current = ''
     let depth = 0
     let i = 0
-    
+
     while (i < content.length) {
         const char = content[i]
-        
+
         if (char === '(') {
             depth++
             current += char
@@ -190,7 +211,12 @@ function tokenizeStructFields(content: string): string[] {
                 tokens.push(current.trim())
                 current = ''
             }
-        } else if (depth === 0 && char === ' ' && current.trim() && !current.includes('(')) {
+        } else if (
+            depth === 0 &&
+            char === ' ' &&
+            current.trim() &&
+            !current.includes('(')
+        ) {
             // Space between field name and type
             tokens.push(current.trim())
             current = ''
@@ -201,15 +227,15 @@ function tokenizeStructFields(content: string): string[] {
         } else {
             current += char
         }
-        
+
         i++
     }
-    
+
     // Add the last token
     if (current.trim()) {
         tokens.push(current.trim())
     }
-    
+
     return tokens
 }
 
@@ -222,14 +248,14 @@ function parseListType(typeString: string): any[] {
         const elementType = typeString.replace('[]', '').trim()
         return [parseTypeString(elementType)]
     }
-    
+
     // Handle LIST(type) notation
     const match = typeString.match(/LIST\((.*)\)$/i)
     if (match) {
         const elementType = match[1].trim()
         return [parseTypeString(elementType)]
     }
-    
+
     return []
 }
 
@@ -243,7 +269,7 @@ function parseMapType(typeString: string): string {
         const valueType = parseTypeString(match[2].trim())
         return `<${keyType}, ${valueType}>`
     }
-    
+
     return '<>'
 }
 
@@ -256,7 +282,7 @@ function parseArrayType(typeString: string): any[] {
         const elementType = match[1].trim()
         return [parseTypeString(elementType)]
     }
-    
+
     return []
 }
 
@@ -265,21 +291,18 @@ function parseArrayType(typeString: string): any[] {
  */
 function parseUnionType(typeString: string): Record<string, any> {
     const result: Record<string, any> = {}
-    
+
     const match = typeString.match(/UNION\((.*)\)$/i)
     if (!match) {
         return {}
     }
-    
+
     const content = match[1]
     const fields = parseStructFields(content) // Reuse struct field parsing
-    
+
     for (const field of fields) {
         result[field.name] = parseTypeString(field.type)
     }
-    
+
     return result
 }
-
-
-
