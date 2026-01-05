@@ -1,3 +1,15 @@
+# [0.30.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.29.0...v0.30.0) (2026-01-05)
+
+
+### Bug Fixes
+
+* clearing search wont crash app now. ([b28feed](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/b28feed73f8596fb2f07be6f93b20030170f7414))
+
+
+### Features
+
+* show data tab tabulator initialized ([265cc28](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/265cc28b6825233d3404266bf4b506dc8b3f0527))
+
 # [0.29.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.28.0...v0.29.0) (2025-10-01)
 
 
