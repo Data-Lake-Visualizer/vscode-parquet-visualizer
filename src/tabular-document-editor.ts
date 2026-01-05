@@ -690,8 +690,8 @@ export class TabularDocumentEditorProvider
     getAceEditorCompletions(schema: any) {
         let formattedSchema: any = {}
         for (const key in schema) {
-            const columnName = schema[key].name
-            const columnType = schema[key].typeValue
+            const columnName = schema[key].column_name
+            const columnType = schema[key].arrow_column_type
 
             formattedSchema[columnName] = columnType
         }
