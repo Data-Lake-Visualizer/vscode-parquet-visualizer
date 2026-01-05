@@ -2,7 +2,7 @@ class Sort {
     constructor(/** @type {Tab} */ tab) {
         this.tab = tab
 
-        this.sortQuery
+        this.sortQuery = undefined
     }
 
     initialize() {
