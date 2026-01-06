@@ -1,3 +1,10 @@
+## [0.30.2](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.1...v0.30.2) (2026-01-06)
+
+
+### Bug Fixes
+
+* enhance JSON conversion by handling BigInt values in query results ([2326fe6](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/2326fe6c45d3596a3357b32b386bbb6672482537))
+
 ## [0.30.1](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.0...v0.30.1) (2026-01-05)
 
 
