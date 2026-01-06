@@ -162,7 +162,7 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             path: uri.path,
             query: uri.query,
             fragment: uri.fragment,
-            fsPath: uri.fsPath
+            fsPath: uri.fsPath,
         })
 
         const dataWorker = new Worker(workerPath, {

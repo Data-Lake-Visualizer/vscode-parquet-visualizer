@@ -501,7 +501,7 @@ export class BackendWorker {
 ;(async () => {
     const uri = workerData.uri
     let parsedUri: URI
-    
+
     // Debug: Log what we actually receive from serialization
     console.log('Worker received URI object:', JSON.stringify(uri, null, 2))
     console.log('URI components:', {
@@ -509,9 +509,9 @@ export class BackendWorker {
         authority: uri.authority,
         path: uri.path,
         query: uri.query,
-        fragment: uri.fragment
+        fragment: uri.fragment,
     })
-    
+
     try {
         // Try to reconstruct the URI from the serialized components
         parsedUri = URI.from({
@@ -532,13 +532,19 @@ export class BackendWorker {
             if (uri.scheme === 'file' && uri.path) {
                 parsedUri = URI.file(decodeURIComponent(uri.path))
             } else {
-                const errorMessage = error instanceof Error ? error.message : String(error)
-                const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError)
-                throw new Error(`Failed to parse URI: ${errorMessage}. Parse error: ${parseErrorMessage}`)
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error)
+                const parseErrorMessage =
+                    parseError instanceof Error
+                        ? parseError.message
+                        : String(parseError)
+                throw new Error(
+                    `Failed to parse URI: ${errorMessage}. Parse error: ${parseErrorMessage}`
+                )
             }
         }
     }
-    
+
     const worker = await BackendWorker.create(
         workerData.tabName,
         parsedUri,
