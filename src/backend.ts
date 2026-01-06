@@ -90,7 +90,9 @@ export abstract class Backend {
 
         const queryResult = await this.queryImpl(query)
         const result = Object.entries(queryResult).map(([k, v]) => {
-            return this.convertObjectsToJSONStrings(v)
+            return this.convertObjectsToJSONStrings(
+                this.convertBigIntToString(k, v)
+            )
         })
 
         const endTime = performance.now()
