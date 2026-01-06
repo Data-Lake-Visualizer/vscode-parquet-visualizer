@@ -502,16 +502,6 @@ export class BackendWorker {
     const uri = workerData.uri
     let parsedUri: URI
 
-    // Debug: Log what we actually receive from serialization
-    console.log('Worker received URI object:', JSON.stringify(uri, null, 2))
-    console.log('URI components:', {
-        scheme: uri.scheme,
-        authority: uri.authority,
-        path: uri.path,
-        query: uri.query,
-        fragment: uri.fragment,
-    })
-
     try {
         // Try to reconstruct the URI from the serialized components
         parsedUri = URI.from({
@@ -521,6 +511,7 @@ export class BackendWorker {
             path: uri.path,
             query: uri.query,
         })
+        console.log('Worker thread URI object:', parsedUri)
     } catch (error: unknown) {
         // If reconstruction fails, try parsing from string representation
         // This handles cases where the URI components contain encoded characters

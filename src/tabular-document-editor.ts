@@ -155,15 +155,6 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
 
         // Debug: Log what we're sending to the worker before serialization
         console.log('Main thread URI object:', uri)
-        console.log('Main thread URI toString():', uri.toString())
-        console.log('Main thread URI components:', {
-            scheme: uri.scheme,
-            authority: uri.authority,
-            path: uri.path,
-            query: uri.query,
-            fragment: uri.fragment,
-            fsPath: uri.fsPath,
-        })
 
         const dataWorker = new Worker(workerPath, {
             workerData: {
