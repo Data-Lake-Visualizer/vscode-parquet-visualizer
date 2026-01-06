@@ -180,7 +180,7 @@
         "exceljs": "^4.4.0",
         "ini": "^5.0.0",
         "parquet-wasm": "^0.6.0",
-        "vscode-uri": "^3.0.8"
+        "vscode-uri": "^3.1.0"
     },
     "binary": {
         "module_name": "duckdb",
