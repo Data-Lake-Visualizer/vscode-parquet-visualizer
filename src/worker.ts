@@ -500,14 +500,45 @@ export class BackendWorker {
 
 ;(async () => {
     const uri = workerData.uri
-    const parsedUri = URI.from({
+    let parsedUri: URI
+    
+    // Debug: Log what we actually receive from serialization
+    console.log('Worker received URI object:', JSON.stringify(uri, null, 2))
+    console.log('URI components:', {
         scheme: uri.scheme,
         authority: uri.authority,
-        fragment: uri.fragment,
         path: uri.path,
         query: uri.query,
+        fragment: uri.fragment
     })
-    workerData.uri
+    
+    try {
+        // Try to reconstruct the URI from the serialized components
+        parsedUri = URI.from({
+            scheme: uri.scheme,
+            authority: uri.authority,
+            fragment: uri.fragment,
+            path: uri.path,
+            query: uri.query,
+        })
+    } catch (error: unknown) {
+        // If reconstruction fails, try parsing from string representation
+        // This handles cases where the URI components contain encoded characters
+        try {
+            const uriString = `${uri.scheme}://${uri.authority || ''}${uri.path || ''}${uri.query ? '?' + uri.query : ''}${uri.fragment ? '#' + uri.fragment : ''}`
+            parsedUri = URI.parse(uriString)
+        } catch (parseError: unknown) {
+            // As a fallback, create a minimal URI for file scheme
+            if (uri.scheme === 'file' && uri.path) {
+                parsedUri = URI.file(decodeURIComponent(uri.path))
+            } else {
+                const errorMessage = error instanceof Error ? error.message : String(error)
+                const parseErrorMessage = parseError instanceof Error ? parseError.message : String(parseError)
+                throw new Error(`Failed to parse URI: ${errorMessage}. Parse error: ${parseErrorMessage}`)
+            }
+        }
+    }
+    
     const worker = await BackendWorker.create(
         workerData.tabName,
         parsedUri,
