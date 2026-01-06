@@ -5,8 +5,7 @@ node_modules
 .vscode-test/
 *.vsix
 .idea
-
-data/.vscode
+**/.vscode/
 
 data/parquet/*.parquet
 data/csv/*.csv
