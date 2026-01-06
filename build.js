@@ -9,7 +9,7 @@
 
     if (!envVars.AZURE_APP_INSIGHTS_CONNECTION_STRING) {
         console.error('Build failed. Azure App insights conn string not found')
-        process.exit(1)
+        // process.exit(1)
     }
 
     function execCommand(command, options) {

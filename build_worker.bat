@@ -6,4 +6,4 @@ copy /y node_modules\parquet-wasm\node\parquet_wasm_bg.wasm out\
 
 @REM Run esbuild for worker.ts
 echo Run esbuild for worker.ts
-esbuild src\worker.ts --bundle --outfile=out\worker.js --external:vscode --external:nock --external:aws-sdk --external:mock-aws-s3 --external:@duckdb/node-api --external:@duckdb/node-bindings --external:@duckdb/node-bindings-* --format=cjs --platform=node --minify
+esbuild src\worker.ts --bundle --outfile=out\worker.js --external:vscode --external:nock --external:aws-sdk --external:mock-aws-s3 --external:@duckdb/node-api --format=cjs --platform=node --minify
