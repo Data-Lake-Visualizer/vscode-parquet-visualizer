@@ -147,7 +147,7 @@ function mapBasicTypeToArrow(typeString: string): string {
 /**
  * Parses a STRUCT type string like "STRUCT(a INTEGER, b VARCHAR)"
  */
-function parseStructType(typeString: string): Record<string, any> {
+function parseStructType(typeString: string): Record<string, any> | any {
     const result: Record<string, any> = {}
 
     // Extract content between STRUCT( and )
@@ -161,6 +161,18 @@ function parseStructType(typeString: string): Record<string, any> {
 
     for (const field of fields) {
         result[field.name] = parseTypeString(field.type)
+    }
+
+    // Special case: if this struct has only one field and it's a complex type,
+    // unwrap it to match the expected schema format from the old version
+    if (fields.length === 1) {
+        const singleField = fields[0]
+        const parsedFieldType = parseTypeString(singleField.type)
+        
+        // If the single field is a list or other complex type, return it directly
+        if (typeof parsedFieldType === 'object' && (parsedFieldType.list || Object.keys(parsedFieldType).length > 0)) {
+            return parsedFieldType
+        }
     }
 
     return result
@@ -177,10 +189,22 @@ function parseStructFields(
 
     for (let i = 0; i < tokens.length; i += 2) {
         if (i + 1 < tokens.length) {
-            fields.push({
-                name: tokens[i],
-                type: tokens[i + 1],
-            })
+            let fieldType = tokens[i + 1]
+            
+            // Check if this field type has array notation []
+            if (fieldType.endsWith('[]')) {
+                const elementType = fieldType.replace('[]', '').trim()
+                // Create a list structure for array types
+                fields.push({
+                    name: tokens[i],
+                    type: `LIST(${elementType})`,
+                })
+            } else {
+                fields.push({
+                    name: tokens[i],
+                    type: fieldType,
+                })
+            }
         }
     }
 
@@ -218,7 +242,12 @@ function tokenizeStructFields(content: string): string[] {
             !current.includes('(')
         ) {
             // Space between field name and type
-            tokens.push(current.trim())
+            let fieldName = current.trim()
+            // Remove quotes from field names
+            if (fieldName.startsWith('"') && fieldName.endsWith('"')) {
+                fieldName = fieldName.slice(1, -1)
+            }
+            tokens.push(fieldName)
             current = ''
             // Skip any additional spaces
             while (i + 1 < content.length && content[i + 1] === ' ') {
@@ -233,7 +262,12 @@ function tokenizeStructFields(content: string): string[] {
 
     // Add the last token
     if (current.trim()) {
-        tokens.push(current.trim())
+        let lastToken = current.trim()
+        // Remove quotes from field names if this is a field name (not a type)
+        if (tokens.length % 2 === 0 && lastToken.startsWith('"') && lastToken.endsWith('"') && !lastToken.includes('(')) {
+            lastToken = lastToken.slice(1, -1)
+        }
+        tokens.push(lastToken)
     }
 
     return tokens
@@ -242,21 +276,35 @@ function tokenizeStructFields(content: string): string[] {
 /**
  * Parses a LIST type string like "LIST(INTEGER)" or "INTEGER[]"
  */
-function parseListType(typeString: string): any[] {
+function parseListType(typeString: string): any {
     // Handle array notation like "INTEGER[]"
     if (typeString.includes('[]')) {
         const elementType = typeString.replace('[]', '').trim()
-        return [parseTypeString(elementType)]
+        const parsedElementType = parseTypeString(elementType)
+        return {
+            list: [
+                {
+                    element: parsedElementType
+                }
+            ]
+        }
     }
 
     // Handle LIST(type) notation
     const match = typeString.match(/LIST\((.*)\)$/i)
     if (match) {
         const elementType = match[1].trim()
-        return [parseTypeString(elementType)]
+        const parsedElementType = parseTypeString(elementType)
+        return {
+            list: [
+                {
+                    element: parsedElementType
+                }
+            ]
+        }
     }
 
-    return []
+    return { list: {} }
 }
 
 /**
