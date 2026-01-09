@@ -1,3 +1,10 @@
+## [0.30.4](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.3...v0.30.4) (2026-01-09)
+
+
+### Bug Fixes
+
+* enhance struct type parsing to handle complex types and improve list type handling ([9f2ff5e](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/9f2ff5e943f54ff204c28ac87e17f0391008d92c))
+
 ## [0.30.3](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.2...v0.30.3) (2026-01-09)
 
 
