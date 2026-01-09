@@ -168,9 +168,12 @@ function parseStructType(typeString: string): Record<string, any> | any {
     if (fields.length === 1) {
         const singleField = fields[0]
         const parsedFieldType = parseTypeString(singleField.type)
-        
+
         // If the single field is a list or other complex type, return it directly
-        if (typeof parsedFieldType === 'object' && (parsedFieldType.list || Object.keys(parsedFieldType).length > 0)) {
+        if (
+            typeof parsedFieldType === 'object' &&
+            (parsedFieldType.list || Object.keys(parsedFieldType).length > 0)
+        ) {
             return parsedFieldType
         }
     }
@@ -190,7 +193,7 @@ function parseStructFields(
     for (let i = 0; i < tokens.length; i += 2) {
         if (i + 1 < tokens.length) {
             let fieldType = tokens[i + 1]
-            
+
             // Check if this field type has array notation []
             if (fieldType.endsWith('[]')) {
                 const elementType = fieldType.replace('[]', '').trim()
@@ -264,7 +267,12 @@ function tokenizeStructFields(content: string): string[] {
     if (current.trim()) {
         let lastToken = current.trim()
         // Remove quotes from field names if this is a field name (not a type)
-        if (tokens.length % 2 === 0 && lastToken.startsWith('"') && lastToken.endsWith('"') && !lastToken.includes('(')) {
+        if (
+            tokens.length % 2 === 0 &&
+            lastToken.startsWith('"') &&
+            lastToken.endsWith('"') &&
+            !lastToken.includes('(')
+        ) {
             lastToken = lastToken.slice(1, -1)
         }
         tokens.push(lastToken)
@@ -284,9 +292,9 @@ function parseListType(typeString: string): any {
         return {
             list: [
                 {
-                    element: parsedElementType
-                }
-            ]
+                    element: parsedElementType,
+                },
+            ],
         }
     }
 
@@ -298,9 +306,9 @@ function parseListType(typeString: string): any {
         return {
             list: [
                 {
-                    element: parsedElementType
-                }
-            ]
+                    element: parsedElementType,
+                },
+            ],
         }
     }
 
