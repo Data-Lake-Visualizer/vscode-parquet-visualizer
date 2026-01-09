@@ -137,6 +137,7 @@
     },
     "scripts": {
         "package": "node build.js",
+        "package-local": "rm -rf *.vsix && npm run package && npx vsce package --no-dependencies",
         "vscode:prepublish": "npm run package",
         "build": "tsc --build tsconfig.dev.json && npm run copy-resources ",
         "copy-resources": "rsync -av resources out",
@@ -181,10 +182,5 @@
         "ini": "^5.0.0",
         "parquet-wasm": "^0.6.0",
         "vscode-uri": "^3.0.8"
-    },
-    "binary": {
-        "module_name": "duckdb",
-        "module_path": "./out/binding/",
-        "host": "https://duckdb-node.s3.amazonaws.com"
     }
 }

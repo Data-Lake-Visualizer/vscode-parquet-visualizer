@@ -3,6 +3,7 @@
 .vscode-test/**
 
 node_modules
+!out/node_modules
 
 # hidden files and folder in root
 **/.*

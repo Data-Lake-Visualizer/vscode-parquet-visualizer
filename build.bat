@@ -3,11 +3,21 @@
 rmdir /s /q "out"
 
 mkdir out
-mkdir out\binding
+mkdir out\node_modules
+mkdir out\node_modules\@duckdb
 
-@REM REM Copy required files - DuckDB bindings are now handled as externals
-@REM copy /y node_modules\duckdb\lib\binding\duckdb.node out\binding\
-@REM if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+@REM Copy DuckDB dependencies to output directory for inclusion in extension package
+@REM Both node-api and node-bindings are needed for proper module resolution
+xcopy /s /y /i node_modules\@duckdb\node-api out\node_modules\@duckdb\node-api\
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+xcopy /s /y /i node_modules\@duckdb\node-bindings out\node_modules\@duckdb\node-bindings\
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+@REM Copy platform-specific DuckDB binaries (Windows version)
+for /d %%d in (node_modules\@duckdb\node-bindings-*) do (
+    xcopy /s /y /i "%%d" "out\node_modules\@duckdb\%%~nxd\"
+)
 
 copy /y node_modules\parquet-wasm\node\parquet_wasm_bg.wasm out\
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
