@@ -1,3 +1,10 @@
+## [0.30.3](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.2...v0.30.3) (2026-01-09)
+
+
+### Bug Fixes
+
+* include new duckdb node-api bindings to vsix build ([e5493cd](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/e5493cd1623b8f0b5f3df97239d63774de055a45))
+
 ## [0.30.2](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.1...v0.30.2) (2026-01-06)
 
 
