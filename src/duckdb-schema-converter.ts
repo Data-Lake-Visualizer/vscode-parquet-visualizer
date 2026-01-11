@@ -171,8 +171,10 @@ function parseStructType(typeString: string): Record<string, any> | any {
 
         // If the single field is a list or other complex type, return it directly
         if (
-            typeof parsedFieldType === 'object' &&
-            (parsedFieldType.list || Object.keys(parsedFieldType).length > 0)
+            Array.isArray(parsedFieldType) ||
+            (typeof parsedFieldType === 'object' &&
+                parsedFieldType !== null &&
+                Object.keys(parsedFieldType).length > 0)
         ) {
             return parsedFieldType
         }
@@ -289,13 +291,7 @@ function parseListType(typeString: string): any {
     if (typeString.includes('[]')) {
         const elementType = typeString.replace('[]', '').trim()
         const parsedElementType = parseTypeString(elementType)
-        return {
-            list: [
-                {
-                    element: parsedElementType,
-                },
-            ],
-        }
+        return [parsedElementType]
     }
 
     // Handle LIST(type) notation
@@ -303,16 +299,10 @@ function parseListType(typeString: string): any {
     if (match) {
         const elementType = match[1].trim()
         const parsedElementType = parseTypeString(elementType)
-        return {
-            list: [
-                {
-                    element: parsedElementType,
-                },
-            ],
-        }
+        return [parsedElementType]
     }
 
-    return { list: {} }
+    return []
 }
 
 /**
