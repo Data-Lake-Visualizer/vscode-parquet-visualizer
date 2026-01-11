@@ -457,6 +457,9 @@
         const tab = tabManager.getTab(source)
         tab?.editor.editorControls.reset()
         tab?.tableWrapper.clearAlert()
+        
+        // Reset export button state if it's stuck in "Exporting..." state
+        tab?.resultControls?.exportDropdownMenu?.resetExportState()
     }
 
     function handleColorThemeChangeById(id, href) {
@@ -606,16 +609,9 @@
                 break
             }
             case 'exportComplete': {
-                // TODO: Move to dropdown-menu.js
-                const exportResultsButton = document.getElementById(
-                    `export-${body.tabName}`
-                )
-                exportResultsButton?.removeAttribute('disabled')
-
-                const exportResultsButtonText = document.getElementById(
-                    `export-text-${body.tabName}`
-                )
-                exportResultsButtonText.innerText = 'Export results'
+                // Reset export button using the dropdown menu method
+                const tab = tabManager.getTab(body.tabName)
+                tab?.resultControls?.exportDropdownMenu?.resetExportState()
                 break
             }
             case 'error': {
