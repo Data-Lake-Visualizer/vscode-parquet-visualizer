@@ -59,7 +59,7 @@
                     "type": "string",
                     "editPresentation": "multilineText",
                     "default": "SELECT *\r\nFROM data\r\nLIMIT 1000;",
-                    "markdownDescription": "Default SQL query for parquet file. The table `data` should remain the same."
+                    "markdownDescription": "Default SQL query template. The `FROM data` clause will be automatically replaced with the appropriate DuckDB function (`read_parquet('path')` for Parquet files or `read_csv('path')` for CSV files) based on the file type. You can customize the query structure (SELECT columns, WHERE clauses, LIMIT, etc.) and the function name will be automatically substituted."
                 },
                 "parquet-visualizer.RunQueryKeyBinding": {
                     "type": "string",

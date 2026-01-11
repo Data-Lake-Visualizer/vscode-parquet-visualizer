@@ -367,9 +367,13 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             )
         } catch (e: unknown) {
             console.error(e)
-            this.fireErrorEvent(constants.REQUEST_SOURCE_QUERY_TAB, e as string)
-            getLogger().error(e as string)
-            vscode.window.showErrorMessage(e as string)
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            this.fireErrorEvent(
+                constants.REQUEST_SOURCE_QUERY_TAB,
+                errorMessage
+            )
+            getLogger().error(errorMessage)
+            vscode.window.showErrorMessage(errorMessage)
         }
     }
 
@@ -495,8 +499,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 })
         } catch (e: unknown) {
             console.error(e)
-            const errorMessage = `Export failed: ${e}`
-            getLogger().error(e as string)
+            const baseErrorMessage = e instanceof Error ? e.message : String(e)
+            const errorMessage = `Export failed: ${baseErrorMessage}`
+            getLogger().error(errorMessage)
             vscode.window.showErrorMessage(errorMessage)
             this.fireErrorEvent(message.source, errorMessage)
             // Also fire export complete to reset the button state
@@ -916,6 +921,23 @@ export class TabularDocumentEditorProvider
                 defaultRunQueryKeyBindingFromSettings
             )
 
+            // Get the default query with the actual function name (read_parquet or read_csv) for display in editor
+            let defaultQueryForEditor = defaultQueryFromSettings
+            if (document.isQueryAble && document.queryTabWorker) {
+                try {
+                    defaultQueryForEditor =
+                        await document.queryTabWorker.formatQueryForDisplay(
+                            defaultQueryFromSettings
+                        )
+                } catch (error) {
+                    getLogger().warn(
+                        'Failed to format query for display, using settings query',
+                        error
+                    )
+                    defaultQueryForEditor = defaultQueryFromSettings
+                }
+            }
+
             const queryTabData = {
                 headers: tableData.headers,
                 schema: tableData.schema,
@@ -927,7 +949,7 @@ export class TabularDocumentEditorProvider
                 requestSource: constants.REQUEST_SOURCE_QUERY_TAB,
                 requestType: 'paginator',
                 settings: {
-                    defaultQuery: defaultQueryFromSettings,
+                    defaultQuery: defaultQueryForEditor,
                     defaultPageSizes: defaultPageSizesFromSettings,
                     shortCutMapping: shortCutMapping,
                 },
@@ -1101,10 +1123,15 @@ export class TabularDocumentEditorProvider
         const shortCutMapping = this.createShortcutMapping(
             defaultRunQueryKeyBindingFromSettings
         )
+
+        // Get the default query with the actual read function (read_parquet or read_csv)
+        const defaultQueryWithFunction =
+            await document.dataTabWorker.getDefaultQuery()
+
         const queryMessage = {
             source: 'paginator',
             query: {
-                queryString: 'SELECT * FROM data',
+                queryString: defaultQueryWithFunction,
                 pageSize: pageSize,
             },
         }
