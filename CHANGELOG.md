@@ -1,3 +1,10 @@
+## [0.30.7](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.6...v0.30.7) (2026-01-11)
+
+
+### Bug Fixes
+
+* fixed the CTE not working. improved the UX by using actual read functions in editor. ([c5d7b81](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/c5d7b81a73fd6a0b140ee5d2f3e0f31537efd5ba))
+
 ## [0.30.6](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.5...v0.30.6) (2026-01-11)
 
 
