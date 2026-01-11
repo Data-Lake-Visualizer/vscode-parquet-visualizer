@@ -1,3 +1,12 @@
+## [0.30.5](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.4...v0.30.5) (2026-01-11)
+
+
+### Bug Fixes
+
+* enhance Excel export functionality by filtering unsupported column types and ensuring proper file cleanup ([989a078](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/989a0782cdb65c926041bdb96f736ee4bdac9760))
+* expand type checks for integer and float column types in TableWrapper ([114043a](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/114043a91ac8d98b88035f5c68c3551d390aed39))
+* handle stuck exporting... state when exporting excel files when export failed. ([49d16a0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/49d16a0d4be49a7b4164b11e4383bdaef6be1b16))
+
 ## [0.30.4](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.3...v0.30.4) (2026-01-09)
 
 
