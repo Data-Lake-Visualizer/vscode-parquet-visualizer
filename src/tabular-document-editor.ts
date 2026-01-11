@@ -367,9 +367,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             )
         } catch (e: unknown) {
             console.error(e)
-            this.fireErrorEvent(constants.REQUEST_SOURCE_QUERY_TAB, e as string)
-            getLogger().error(e as string)
-            vscode.window.showErrorMessage(e as string)
+            const errorMessage = e instanceof Error ? e.message : String(e)
+            this.fireErrorEvent(constants.REQUEST_SOURCE_QUERY_TAB, errorMessage)
+            getLogger().error(errorMessage)
+            vscode.window.showErrorMessage(errorMessage)
         }
     }
 
@@ -495,8 +496,9 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
                 })
         } catch (e: unknown) {
             console.error(e)
-            const errorMessage = `Export failed: ${e}`
-            getLogger().error(e as string)
+            const baseErrorMessage = e instanceof Error ? e.message : String(e)
+            const errorMessage = `Export failed: ${baseErrorMessage}`
+            getLogger().error(errorMessage)
             vscode.window.showErrorMessage(errorMessage)
             this.fireErrorEvent(message.source, errorMessage)
             // Also fire export complete to reset the button state
