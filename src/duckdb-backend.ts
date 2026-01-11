@@ -95,7 +95,6 @@ export class DuckDBBackend extends Backend {
     }
 
     async initializeSchema() {
-        // const startTime = performance.now()
         try {
             const reader = await this.connection.runAndReadAll(`
                 DESCRIBE SELECT * FROM query_result
