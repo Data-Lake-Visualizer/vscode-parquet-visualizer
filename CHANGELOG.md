@@ -1,3 +1,10 @@
+## [0.30.6](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.5...v0.30.6) (2026-01-11)
+
+
+### Bug Fixes
+
+* list type formatting ([8d8e6c0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/8d8e6c004e27a70e34fdbb67b9edde6c5b66712b))
+
 ## [0.30.5](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.4...v0.30.5) (2026-01-11)
 
 
