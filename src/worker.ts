@@ -214,23 +214,59 @@ class QueryHelper {
         await workbook.xlsx.writeFile(filePath)
     }
 
-    private formatQueryString(query: string = ''): string {
-        const pattern = /FROM data/i
+    public buildDefaultQuery(): string {
+        const path = this.backend.getPathForQuery(this.backend.uri)
+        const readFn = this.backend.getReadFunctionByFileType()
+        return `SELECT * FROM ${readFn}('${path}') LIMIT 1000;`
+    }
 
-        if (!pattern.test(query)) {
-            throw new Error("Query string must contain 'FROM data'")
-        }
-
+    public formatQueryForDisplay(query: string = ''): string {
         const path = this.backend.getPathForQuery(this.backend.uri)
         const readFn = this.backend.getReadFunctionByFileType()
 
-        return query.replace(
-            pattern,
-            `
-      FROM ${readFn}
-      ('${path}')
-    `
-        )
+        // If query contains "FROM data", replace it with the actual function call
+        const fromDataPattern = /FROM data/i
+        if (fromDataPattern.test(query)) {
+            return query.replace(fromDataPattern, `FROM ${readFn}('${path}')`)
+        }
+
+        // If query contains a function call with 'path' placeholder, replace it with actual path
+        const pathPlaceholderPattern = /(read_parquet|read_csv)\('path'\)/gi
+        if (pathPlaceholderPattern.test(query)) {
+            return query.replace(
+                pathPlaceholderPattern,
+                `${readFn}('${path}')`
+            )
+        }
+
+        // If query doesn't need replacement, use it as-is
+        return query
+    }
+
+    private formatQueryString(query: string = ''): string {
+        const path = this.backend.getPathForQuery(this.backend.uri)
+        const readFn = this.backend.getReadFunctionByFileType()
+
+        // If query contains "FROM data", replace it with the actual function call
+        const fromDataPattern = /FROM data/i
+        if (fromDataPattern.test(query)) {
+            return query.replace(
+                fromDataPattern,
+                `FROM ${readFn}('${path}')`
+            )
+        }
+
+        // If query contains a function call with 'path' placeholder, replace it with actual path
+        const pathPlaceholderPattern = /(read_parquet|read_csv)\('path'\)/gi
+        if (pathPlaceholderPattern.test(query)) {
+            return query.replace(
+                pathPlaceholderPattern,
+                `${readFn}('${path}')`
+            )
+        }
+
+        // If query doesn't need replacement, use it as-is (user may have written their own query)
+        return query
     }
 
     async export(message: any) {
@@ -571,6 +607,14 @@ export class BackendWorker {
 
     getMetaData() {
         return this.queryHelper.backend.getMetaData()
+    }
+
+    getDefaultQuery(): string {
+        return this.queryHelper.buildDefaultQuery()
+    }
+
+    formatQueryForDisplay(query: string): string {
+        return this.queryHelper.formatQueryForDisplay(query)
     }
 }
 

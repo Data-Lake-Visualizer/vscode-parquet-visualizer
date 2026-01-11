@@ -56,7 +56,7 @@ The following configuration options are available:
 |----|-------|-----------|
 |`parquet-visualizer.backend`|`duckdb`| Backend for reading the parquet file. Options: `duckdb`, `parquet-wasm`|
 |`parquet-visualizer.defaultPageSizes`|`["20", "50", "100", "500", "all"]`|Set the default page size for data and query tab.|
-|`parquet-visualizer.defaultQuery`|`SELECT *\r\nFROM data\r\nLIMIT 1000;`|Default SQL query for parquet file. The table `data` should remain the same.|
+|`parquet-visualizer.defaultQuery`|`SELECT *\r\nFROM data\r\nLIMIT 1000;`|Default SQL query template. The `FROM data` clause will be automatically replaced with the appropriate DuckDB function (`read_parquet('path')` for Parquet files or `read_csv('path')` for CSV files) based on the file type. You can customize the query structure (SELECT columns, WHERE clauses, LIMIT, etc.) and the function name will be automatically substituted.|
 |`parquet-visualizer.RunQueryKeyBinding`|`Ctrl-Enter`|Default Key Binding for running queries. If Ctrl is written, it will be translated to Command for mac and vica versa. E.g., Ctrl-E will be synonymous to Command-E.|
 |`parquet-visualizer.dateTimeFormat`|`ISO8601`|Set datetime format for columns of timestamp type. Defaults to ISO8601. You can set a custom format like `YYYY-MM-DD HH:mm:ss.SSS Z`. Find rules for formatting [here](https://www.npmjs.com/package/date-and-time#formatdateobj-arg-utc).|
 |`parquet-visualizer.outputDateTimeFormatInUTC`|`true`|Outputs the datetime format for timestamp columns in UTC or in local time.|
