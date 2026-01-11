@@ -368,7 +368,10 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
         } catch (e: unknown) {
             console.error(e)
             const errorMessage = e instanceof Error ? e.message : String(e)
-            this.fireErrorEvent(constants.REQUEST_SOURCE_QUERY_TAB, errorMessage)
+            this.fireErrorEvent(
+                constants.REQUEST_SOURCE_QUERY_TAB,
+                errorMessage
+            )
             getLogger().error(errorMessage)
             vscode.window.showErrorMessage(errorMessage)
         }
@@ -922,9 +925,15 @@ export class TabularDocumentEditorProvider
             let defaultQueryForEditor = defaultQueryFromSettings
             if (document.isQueryAble && document.queryTabWorker) {
                 try {
-                    defaultQueryForEditor = await document.queryTabWorker.formatQueryForDisplay(defaultQueryFromSettings)
+                    defaultQueryForEditor =
+                        await document.queryTabWorker.formatQueryForDisplay(
+                            defaultQueryFromSettings
+                        )
                 } catch (error) {
-                    getLogger().warn('Failed to format query for display, using settings query', error)
+                    getLogger().warn(
+                        'Failed to format query for display, using settings query',
+                        error
+                    )
                     defaultQueryForEditor = defaultQueryFromSettings
                 }
             }
@@ -1114,10 +1123,11 @@ export class TabularDocumentEditorProvider
         const shortCutMapping = this.createShortcutMapping(
             defaultRunQueryKeyBindingFromSettings
         )
-        
+
         // Get the default query with the actual read function (read_parquet or read_csv)
-        const defaultQueryWithFunction = await document.dataTabWorker.getDefaultQuery()
-        
+        const defaultQueryWithFunction =
+            await document.dataTabWorker.getDefaultQuery()
+
         const queryMessage = {
             source: 'paginator',
             query: {
