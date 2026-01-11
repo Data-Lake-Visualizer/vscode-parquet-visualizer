@@ -457,7 +457,7 @@
         const tab = tabManager.getTab(source)
         tab?.editor.editorControls.reset()
         tab?.tableWrapper.clearAlert()
-        
+
         // Reset export button state if it's stuck in "Exporting..." state
         tab?.resultControls?.exportDropdownMenu?.resetExportState()
     }

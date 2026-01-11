@@ -324,32 +324,44 @@ class QueryHelper {
             }
 
             // Filter out unsupported columns and log them for user awareness
-            // eslint-disable-next-line @typescript-eslint/naming-convention  
-            const supportedColumns = schema.filter(({ data_type }) => !isUnsupportedForExcel(data_type))
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            const unsupportedColumns = schema.filter(({ data_type }) => isUnsupportedForExcel(data_type))
-            
+            const supportedColumns = schema.filter(
+                ({ data_type }) => !isUnsupportedForExcel(data_type)
+            )
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            const unsupportedColumns = schema.filter(({ data_type }) =>
+                isUnsupportedForExcel(data_type)
+            )
+
             if (unsupportedColumns.length > 0) {
-                const unsupportedColumnNames = unsupportedColumns.map(({ column_name }) => column_name).join(', ')
-                console.log(`Excel export: Excluding ${unsupportedColumns.length} unsupported columns: ${unsupportedColumnNames}`)
+                const unsupportedColumnNames = unsupportedColumns
+                    .map(({ column_name }) => column_name)
+                    .join(', ')
+                console.log(
+                    `Excel export: Excluding ${unsupportedColumns.length} unsupported columns: ${unsupportedColumnNames}`
+                )
             }
 
             // Build the SELECT query with supported columns only
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            const columns = supportedColumns.map(({ column_name, data_type }) => {
-                if (data_type.includes('STRUCT')) {
-                    return `TO_JSON("${column_name}") AS ${column_name}`
-                }
+            const columns = supportedColumns.map(
+                ({ column_name, data_type }) => {
+                    if (data_type.includes('STRUCT')) {
+                        return `TO_JSON("${column_name}") AS ${column_name}`
+                    }
 
-                if (unsignedIntegers.includes(data_type)) {
-                    return `CAST("${column_name}" AS BIGINT) AS ${column_name}`
+                    if (unsignedIntegers.includes(data_type)) {
+                        return `CAST("${column_name}" AS BIGINT) AS ${column_name}`
+                    }
+                    return `"${column_name}"`
                 }
-                return `"${column_name}"`
-            })
+            )
 
             // Ensure we have at least one column to export
             if (columns.length === 0) {
-                throw new Error('No supported columns found for Excel export. All columns contain unsupported data types (LIST, ARRAY, DECIMAL).')
+                throw new Error(
+                    'No supported columns found for Excel export. All columns contain unsupported data types (LIST, ARRAY, DECIMAL).'
+                )
             }
 
             let subQuery = `SELECT ${columns.join(', ')} FROM ${this.tableName}`
@@ -381,24 +393,27 @@ class QueryHelper {
 
         // Track files that need cleanup on error
         const filesToCleanup: string[] = []
-        
+
         try {
             // On Windows, we need to create empty Excel files before DuckDB execution
             if (os.platform() === 'win32' && exportType === 'excel') {
                 await this.createEmptyExcelFile(savedPath)
                 filesToCleanup.push(savedPath)
-                
-                const tmpPath = savedPath.replace(/([^\\]+)\.xlsx$/, 'tmp_$1.xlsx')
+
+                const tmpPath = savedPath.replace(
+                    /([^\\]+)\.xlsx$/,
+                    'tmp_$1.xlsx'
+                )
                 await this.createEmptyExcelFile(tmpPath)
                 filesToCleanup.push(tmpPath)
             } else {
                 // On non-Windows, DuckDB will create the file, so track it for potential cleanup
                 filesToCleanup.push(savedPath)
             }
-            
+
             // Execute the DuckDB query
             await this.backend.query(query)
-            
+
             return savedPath
         } catch (error) {
             // Clean up any files that were created if an error occurred
@@ -409,10 +424,13 @@ class QueryHelper {
                     }
                 } catch (cleanupError) {
                     // Log cleanup error but don't throw to avoid masking the original error
-                    console.warn(`Failed to cleanup file ${filePath}:`, cleanupError)
+                    console.warn(
+                        `Failed to cleanup file ${filePath}:`,
+                        cleanupError
+                    )
                 }
             }
-            
+
             // Re-throw the original error
             throw error
         }
