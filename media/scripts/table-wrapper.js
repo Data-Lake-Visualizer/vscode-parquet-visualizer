@@ -75,12 +75,26 @@ class TableWrapper extends EventTarget {
                 if (type === 'VARCHAR') {
                     td.classList.add('text')
                 }
-                // Check for integer
-                else if (type === 'INTEGER' || type === 'BIGINT') {
+                // Check for integer types (including all signed and unsigned variants)
+                else if (
+                    type === 'INTEGER' ||
+                    type === 'BIGINT' ||
+                    type === 'TINYINT' ||
+                    type === 'SMALLINT' ||
+                    type === 'UTINYINT' ||
+                    type === 'USMALLINT' ||
+                    type === 'UINTEGER' ||
+                    type === 'UBIGINT'
+                ) {
                     td.classList.add('integer')
                 }
-                // Check for float
-                else if (type === 'DOUBLE' || type === 'FLOAT') {
+                // Check for float types (including DECIMAL)
+                else if (
+                    type === 'DOUBLE' ||
+                    type === 'FLOAT' ||
+                    type === 'DECIMAL' ||
+                    type.startsWith('DECIMAL(')
+                ) {
                     td.classList.add('float')
                 } else if (type.endsWith('[]')) {
                     td.classList.add('text')

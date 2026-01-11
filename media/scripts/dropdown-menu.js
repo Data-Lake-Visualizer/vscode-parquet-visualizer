@@ -54,6 +54,7 @@ class DropdownMenu {
                         : undefined
                     this.tab.vscode.postMessage({
                         type: 'exportResults',
+                        source: this.tab.name,
                         exportType: selectedOption,
                         searchString: filterValueInput?.value,
                         sort: sort,
@@ -82,5 +83,30 @@ class DropdownMenu {
                 dropdownMenu.style.display = 'none'
             }
         })
+    }
+
+    /**
+     * Resets the export button state to its initial state
+     */
+    resetExportState() {
+        const exportResultsButton = document.getElementById(
+            `export-${this.tab.name}`
+        )
+        exportResultsButton?.removeAttribute('disabled')
+
+        const exportResultsButtonText = document.getElementById(
+            `export-text-${this.tab.name}`
+        )
+        if (exportResultsButtonText) {
+            exportResultsButtonText.innerText = 'Export'
+        }
+
+        // Close the dropdown menu if it's open
+        const dropdownMenu = document.getElementById(
+            `dropdown-menu-${this.tab.name}`
+        )
+        if (dropdownMenu && dropdownMenu.style.display === 'block') {
+            dropdownMenu.style.display = 'none'
+        }
     }
 }

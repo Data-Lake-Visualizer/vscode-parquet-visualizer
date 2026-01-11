@@ -499,6 +499,8 @@ class CustomDocument extends Disposable implements vscode.CustomDocument {
             getLogger().error(e as string)
             vscode.window.showErrorMessage(errorMessage)
             this.fireErrorEvent(message.source, errorMessage)
+            // Also fire export complete to reset the button state
+            this.fireExportCompleteEvent(message.tabName)
         }
         return exportType
     }
