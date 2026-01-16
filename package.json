@@ -1,7 +1,7 @@
 {
     "name": "parquet-visualizer",
     "displayName": "Parquet Visualizer",
-    "description": "Inspect and query very large parquet/CSV files fast and easy",
+    "description": "Inspect and query very large Parquet, Avro and CSV files fast and easy",
     "publisher": "lucien-martijn",
     "icon": "media/ico128.png",
     "homepage": "https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer",
@@ -33,6 +33,7 @@
     "keywords": [
         "parquet",
         "csv",
+        "avro",
         "visualizer",
         "table",
         "schema",
@@ -130,6 +131,9 @@
                     },
                     {
                         "filenamePattern": "*.csv"
+                    },
+                    {
+                        "filenamePattern": "*.avro"
                     }
                 ]
             }

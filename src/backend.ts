@@ -44,7 +44,10 @@ export abstract class Backend {
     abstract getSchemaImpl(): Promise<any>
 
     public getMetaData(): any {
-        if (this.extensionName === constants.CSV_NAME_EXTENSION) {
+        if (
+            this.extensionName === constants.CSV_NAME_EXTENSION ||
+            this.extensionName === constants.AVRO_NAME_EXTENSION
+        ) {
             return []
         }
 

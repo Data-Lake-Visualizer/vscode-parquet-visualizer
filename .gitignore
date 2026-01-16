@@ -10,7 +10,7 @@ data/.vscode
 
 data/parquet/*.parquet
 data/csv/*.csv
-
+data/avro/*.avro
 logs
 
 
