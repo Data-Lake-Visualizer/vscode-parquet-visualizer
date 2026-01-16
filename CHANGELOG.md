@@ -1,3 +1,10 @@
+# [0.31.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.7...v0.31.0) (2026-01-16)
+
+
+### Features
+
+* add support for Avro file format ([636334b](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/636334bec790c53e1a35c0b4470ed4f7fe0db14a))
+
 ## [0.30.7](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.6...v0.30.7) (2026-01-11)
 
 
