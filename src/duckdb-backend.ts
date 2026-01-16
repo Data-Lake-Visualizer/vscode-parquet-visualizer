@@ -79,8 +79,10 @@ export class DuckDBBackend extends Backend {
         //     `)
         // }
 
-        if (this.extensionName === constants.CSV_NAME_EXTENSION || 
-            this.extensionName === constants.AVRO_NAME_EXTENSION) {
+        if (
+            this.extensionName === constants.CSV_NAME_EXTENSION ||
+            this.extensionName === constants.AVRO_NAME_EXTENSION
+        ) {
             const path = this.getPathForQuery(this.uri)
             const readFn = this.getReadFunctionByFileType()
             const reader = await this.connection.runAndReadAll(`
