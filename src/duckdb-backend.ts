@@ -59,6 +59,7 @@ export class DuckDBBackend extends Backend {
         const cores = os.cpus().length
         await this.connection.runAndReadAll(`
           INSTALL spatial; LOAD spatial;
+          INSTALL avro; LOAD avro;
 
           SET threads = ${cores * 2}
         `)
@@ -78,7 +79,8 @@ export class DuckDBBackend extends Backend {
         //     `)
         // }
 
-        if (this.extensionName === constants.CSV_NAME_EXTENSION) {
+        if (this.extensionName === constants.CSV_NAME_EXTENSION || 
+            this.extensionName === constants.AVRO_NAME_EXTENSION) {
             const path = this.getPathForQuery(this.uri)
             const readFn = this.getReadFunctionByFileType()
             const reader = await this.connection.runAndReadAll(`
@@ -148,6 +150,8 @@ export class DuckDBBackend extends Backend {
     public getReadFunctionByFileType() {
         if (this.extensionName === constants.CSV_NAME_EXTENSION) {
             return 'read_csv'
+        } else if (this.extensionName === constants.AVRO_NAME_EXTENSION) {
+            return 'read_avro'
         } else if (
             constants.PARQUET_NAME_EXTENSIONS.includes(this.extensionName)
         ) {

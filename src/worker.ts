@@ -101,7 +101,8 @@ class QueryHelper {
             this.rowCount = Number(queryResult[0]['count'])
         } else {
             // NOTE: Data Tab
-            if (this.backend.extensionName === constants.CSV_NAME_EXTENSION) {
+            if (this.backend.extensionName === constants.CSV_NAME_EXTENSION ||
+                this.backend.extensionName === constants.AVRO_NAME_EXTENSION) {
                 this.rowCount = this.backend.rowCount
             } else {
                 this.rowCount = Number(this.backend.metadata[0]['num_rows'])
@@ -231,7 +232,7 @@ class QueryHelper {
         }
 
         // If query contains a function call with 'path' placeholder, replace it with actual path
-        const pathPlaceholderPattern = /(read_parquet|read_csv)\('path'\)/gi
+        const pathPlaceholderPattern = /(read_parquet|read_csv|read_avro)\('path'\)/gi
         if (pathPlaceholderPattern.test(query)) {
             return query.replace(pathPlaceholderPattern, `${readFn}('${path}')`)
         }
@@ -251,7 +252,7 @@ class QueryHelper {
         }
 
         // If query contains a function call with 'path' placeholder, replace it with actual path
-        const pathPlaceholderPattern = /(read_parquet|read_csv)\('path'\)/gi
+        const pathPlaceholderPattern = /(read_parquet|read_csv|read_avro)\('path'\)/gi
         if (pathPlaceholderPattern.test(query)) {
             return query.replace(pathPlaceholderPattern, `${readFn}('${path}')`)
         }
@@ -588,8 +589,8 @@ export class BackendWorker {
         return this.queryHelper.backend.getRowCount()
     }
 
-    initializeSchema() {
-        this.queryHelper.backend.initializeSchema()
+    async initializeSchema() {
+        await this.queryHelper.backend.initializeSchema()
     }
 
     getSchema() {
