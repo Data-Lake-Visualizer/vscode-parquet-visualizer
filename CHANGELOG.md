@@ -1,3 +1,10 @@
+## [0.31.1](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.31.0...v0.31.1) (2026-01-17)
+
+
+### Bug Fixes
+
+* prevent popover display during text selection in cell click event ([759e788](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/commit/759e788f81c57bfbee1f5d9ef0d4d55421f2056c))
+
 # [0.31.0](https://github.com/Data-Lake-Visualizer/vscode-parquet-visualizer/compare/v0.30.7...v0.31.0) (2026-01-16)
 
 
