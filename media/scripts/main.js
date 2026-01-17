@@ -79,6 +79,12 @@
     }
 
     function onCellClick(e, cell) {
+        // Don't show popover if user is selecting text for copying
+        const selection = window.getSelection()
+        if (selection && selection.toString().trim().length > 0) {
+            return
+        }
+
         const val = cell.getValue()
 
         let popupValue = ''
